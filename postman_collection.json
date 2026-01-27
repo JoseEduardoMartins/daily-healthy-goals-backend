@@ -1,0 +1,225 @@
+{
+  "info": {
+    "name": "Daily Healthy Goals API",
+    "description": "Collection para testar a API do Daily Healthy Goals Backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"João Silva\",\n  \"email\": \"joao@example.com\",\n  \"password\": \"senha123\",\n  \"weight\": 75.5,\n  \"height\": 1.75\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Registra um novo usuário no sistema"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('user_id', response.id);",
+                  "    console.log('User ID salvo:', response.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"joao@example.com\",\n  \"password\": \"senha123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Autentica um usuário existente no sistema"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('user_id', response.id);",
+                  "    console.log('User ID salvo:', response.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/categories",
+              "host": ["{{base_url}}"],
+              "path": ["categories"]
+            },
+            "description": "Lista todas as categorias disponíveis"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Daily Check-in",
+      "item": [
+        {
+          "name": "Create Daily Check-in",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "user-id",
+                "value": "{{user_id}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/daily-checkin",
+              "host": ["{{base_url}}"],
+              "path": ["daily-checkin"]
+            },
+            "description": "Cria um check-in diário e gera as metas automaticamente"
+          }
+        },
+        {
+          "name": "Delete Today Check-in",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "user-id",
+                "value": "{{user_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/daily-checkin/today",
+              "host": ["{{base_url}}"],
+              "path": ["daily-checkin", "today"]
+            },
+            "description": "Remove o check-in do dia atual e todas as metas associadas"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Daily Goals",
+      "item": [
+        {
+          "name": "Get Daily Goals",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "user-id",
+                "value": "{{user_id}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/daily-goals",
+              "host": ["{{base_url}}"],
+              "path": ["daily-goals"]
+            },
+            "description": "Retorna todas as metas do dia atual do usuário"
+          }
+        },
+        {
+          "name": "Update Goal",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "user-id",
+                "value": "{{user_id}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_completed\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/daily-goals/:goal_id",
+              "host": ["{{base_url}}"],
+              "path": ["daily-goals", ":goal_id"],
+              "variable": [
+                {
+                  "key": "goal_id",
+                  "value": "",
+                  "description": "UUID da meta"
+                }
+              ]
+            },
+            "description": "Atualiza o status de conclusão de uma meta"
+          }
+        }
+      ]
+    }
+  ]
+}
