@@ -17,6 +17,13 @@ export class ExercisesService {
     });
   }
 
+  async findAll(): Promise<Exercise[]> {
+    return await this.exercisesRepository.find({
+      relations: ['category', 'pain_state'],
+      order: { name: 'ASC' },
+    });
+  }
+
   async findOne(id: string): Promise<Exercise> {
     return await this.exercisesRepository.findOne({
       where: { id },
