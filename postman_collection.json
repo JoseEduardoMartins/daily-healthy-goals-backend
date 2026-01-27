@@ -14,6 +14,11 @@
       "key": "user_id",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "pain_state_id",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -95,6 +100,40 @@
       ]
     },
     {
+      "name": "Pain States",
+      "item": [
+        {
+          "name": "Get All Pain States",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/pain-states",
+              "host": ["{{base_url}}"],
+              "path": ["pain-states"]
+            },
+            "description": "Lista todos os estados de dor/humor disponíveis"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.length > 0) {",
+                  "        pm.collectionVariables.set('pain_state_id', response[0].id);",
+                  "        console.log('Pain State ID salvo:', response[0].id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Categories",
       "item": [
         {
@@ -107,7 +146,7 @@
               "host": ["{{base_url}}"],
               "path": ["categories"]
             },
-            "description": "Lista todas as categorias disponíveis"
+            "description": "Lista todas as categorias disponíveis (diet e exercise)"
           }
         }
       ]
@@ -132,14 +171,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"category_id\": 1\n}"
+              "raw": "{\n  \"pain_state_id\": \"{{pain_state_id}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/daily-checkin",
               "host": ["{{base_url}}"],
               "path": ["daily-checkin"]
             },
-            "description": "Cria um check-in diário e gera as metas automaticamente"
+            "description": "Cria um check-in diário e gera o plano automaticamente com produtos e exercícios baseados no estado de dor"
           }
         },
         {

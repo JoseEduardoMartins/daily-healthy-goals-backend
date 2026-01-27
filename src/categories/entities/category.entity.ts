@@ -4,20 +4,29 @@ import {
   PrimaryGeneratedColumn,
   OneToMany,
 } from 'typeorm';
-import { GoalLibrary } from '../../goal-library/entities/goal-library.entity';
-import { DailyCheckin } from '../../daily-checkins/entities/daily-checkin.entity';
+import { Product } from '../../products/entities/product.entity';
+import { Exercise } from '../../exercises/entities/exercise.entity';
 
 @Entity('categories')
 export class Category {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 300 })
   name: string;
 
-  @OneToMany(() => GoalLibrary, (goal) => goal.category)
-  goals: GoalLibrary[];
+  @Column({ name: 'image_url', type: 'text', nullable: true })
+  image_url: string;
 
-  @OneToMany(() => DailyCheckin, (checkin) => checkin.category)
-  daily_checkins: DailyCheckin[];
+  @Column({
+    type: 'enum',
+    enum: ['diet', 'exercise'],
+  })
+  type: string;
+
+  @OneToMany(() => Product, (product) => product.category)
+  products: Product[];
+
+  @OneToMany(() => Exercise, (exercise) => exercise.category)
+  exercises: Exercise[];
 }

@@ -1,7 +1,7 @@
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { IsNotEmpty, IsUUID } from 'class-validator';
 
 export class CreateDailyCheckinDto {
-  @IsNumber({}, { message: 'category_id deve ser um número' })
-  @IsNotEmpty({ message: 'category_id é obrigatório' })
-  category_id: number;
+  @IsUUID('4', { message: 'pain_state_id deve ser um UUID válido' })
+  @IsNotEmpty({ message: 'pain_state_id é obrigatório' })
+  pain_state_id: string;
 }

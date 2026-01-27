@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Category } from '../categories/entities/category.entity';
-import { GoalLibrary } from '../goal-library/entities/goal-library.entity';
+import { PainState } from '../pain-states/entities/pain-state.entity';
+import { Product } from '../products/entities/product.entity';
+import { Exercise } from '../exercises/entities/exercise.entity';
 
 @Module({
   imports: [
@@ -11,11 +13,11 @@ import { GoalLibrary } from '../goal-library/entities/goal-library.entity';
       useFactory: (configService: ConfigService) => ({
         type: 'mysql',
         host: configService.get('DB_HOST', 'localhost'),
-        port: configService.get<number>('DB_PORT', 3306),
+        port: configService.get<number>('DB_PORT', 3308),
         username: configService.get('DB_USERNAME', 'app_user'),
         password: configService.get('DB_PASSWORD', 'app_password'),
         database: configService.get('DB_DATABASE', 'daily_healthy_goals'),
-        entities: [Category, GoalLibrary],
+        entities: [Category, PainState, Product, Exercise],
         synchronize: false, // Desabilitar sincronização para seed manual
       }),
       inject: [ConfigService],

@@ -27,7 +27,7 @@ export class User {
   @Column({ type: 'float', nullable: false })
   height: number;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ type: 'datetime' })
   created_at: Date;
 
   @OneToMany(() => DailyCheckin, (checkin) => checkin.user)

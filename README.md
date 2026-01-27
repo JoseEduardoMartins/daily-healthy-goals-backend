@@ -75,10 +75,15 @@ npm run seed
 ### Tabelas
 
 - **users** - Usuários do sistema
-- **categories** - Categorias de estado físico (ex: "Com Dor", "Inchada", "Normal")
-- **goal_library** - Biblioteca de metas vinculadas às categorias
+- **pain_states** - Estados de dor/humor (ex: "Com Dor", "Inchada", "Normal")
+- **categories** - Categorias de produtos e exercícios (tipo: 'diet' ou 'exercise')
+- **products** - Produtos (comidas/bebidas) vinculados a categorias e estados de dor
+- **exercises** - Exercícios vinculados a categorias e estados de dor
+- **ingredients** - Ingredientes para produtos
+- **product_ingredients** - Relação entre produtos e ingredientes
 - **daily_checkins** - Registros diários dos usuários
-- **user_daily_goals** - Metas instanciadas para cada dia do usuário
+- **user_daily_plan** - Plano diário do usuário (produtos e exercícios)
+- **exercise_prescriptions** - Prescrições de exercícios (séries, repetições, descanso)
 
 ## 🔌 Endpoints da API
 
@@ -142,25 +147,48 @@ Login de usuário existente.
 }
 ```
 
-### Categorias
+### Pain States (Estados de Dor)
 
-#### `GET /categories`
-Lista todas as categorias disponíveis.
+#### `GET /pain-states`
+Lista todos os estados de dor/humor disponíveis.
 
 **Resposta:**
 ```json
 [
   {
-    "id": 1,
+    "id": "uuid",
     "name": "Com Dor"
   },
   {
-    "id": 2,
+    "id": "uuid",
     "name": "Inchada"
   },
   {
-    "id": 3,
+    "id": "uuid",
     "name": "Normal"
+  }
+]
+```
+
+### Categorias
+
+#### `GET /categories`
+Lista todas as categorias disponíveis (tipo: 'diet' para alimentos ou 'exercise' para exercícios).
+
+**Resposta:**
+```json
+[
+  {
+    "id": "uuid",
+    "name": "Proteínas",
+    "image_url": "https://example.com/images/proteinas.jpg",
+    "type": "diet"
+  },
+  {
+    "id": "uuid",
+    "name": "Cardio",
+    "image_url": null,
+    "type": "exercise"
   }
 ]
 ```
@@ -168,7 +196,7 @@ Lista todas as categorias disponíveis.
 ### Daily Check-in
 
 #### `POST /daily-checkin`
-Cria um registro diário e gera as metas automaticamente.
+Cria um registro diário e gera automaticamente o plano do dia com produtos (comidas/bebidas) e exercícios baseados no estado de dor selecionado.
 
 **Headers:**
 ```
@@ -178,7 +206,7 @@ user-id: <uuid-do-usuario>
 **Body:**
 ```json
 {
-  "category_id": 1
+  "pain_state_id": "uuid"
 }
 ```
 
@@ -187,19 +215,44 @@ user-id: <uuid-do-usuario>
 {
   "id": "uuid",
   "user_id": "uuid",
-  "category_id": 1,
+  "pain_state_id": "uuid",
   "checkin_date": "2024-01-01",
-  "category": {
-    "id": 1,
+  "pain_state": {
+    "id": "uuid",
     "name": "Com Dor"
   },
-  "user_daily_goals": [
+  "user_daily_plans": [
     {
       "id": "uuid",
+      "checkin_id": "uuid",
+      "product_id": "uuid",
       "is_completed": false,
-      "goal_library": {
-        "id": 1,
-        "description": "Fazer alongamento"
+      "product": {
+        "id": "uuid",
+        "name": "Smoothie de Banana e Aveia",
+        "description": "Rico em fibras e potássio",
+        "moment_of_day": "Desayuno",
+        "benefits": "Ajuda na digestão",
+        "recipe_prep": "Bater no liquidificador..."
+      }
+    },
+    {
+      "id": "uuid",
+      "checkin_id": "uuid",
+      "product_id": null,
+      "is_completed": false,
+      "exercise_prescription": {
+        "id": "uuid",
+        "exercise_id": "uuid",
+        "sets": 3,
+        "reps": "12 a 15",
+        "rest_time": 60,
+        "exercise": {
+          "id": "uuid",
+          "name": "Alongamento Suave",
+          "description": "Exercícios de alongamento",
+          "difficulty": "easy"
+        }
       }
     }
   ]
@@ -216,10 +269,10 @@ Remove o check-in do dia atual e todas as metas associadas (R2 - Delete em Casca
 user-id: <uuid-do-usuario>
 ```
 
-### Daily Goals
+### Daily Goals (Plano Diário)
 
 #### `GET /daily-goals`
-Retorna todas as metas do dia atual do usuário.
+Retorna todo o plano do dia atual do usuário, incluindo produtos (comidas/bebidas) e exercícios com suas prescrições.
 
 **Headers:**
 ```
@@ -232,19 +285,49 @@ user-id: <uuid-do-usuario>
   {
     "id": "uuid",
     "checkin_id": "uuid",
-    "goal_library_id": 1,
+    "product_id": "uuid",
     "is_completed": false,
-    "goal_library": {
-      "id": 1,
-      "category_id": 1,
-      "description": "Fazer alongamento"
+    "product": {
+      "id": "uuid",
+      "name": "Smoothie de Banana e Aveia",
+      "description": "Rico em fibras e potássio",
+      "moment_of_day": "Desayuno",
+      "benefits": "Ajuda na digestão",
+      "recipe_prep": "Bater no liquidificador..."
+    },
+    "exercise_prescription": null
+  },
+  {
+    "id": "uuid",
+    "checkin_id": "uuid",
+    "product_id": null,
+    "is_completed": false,
+    "product": null,
+    "exercise_prescription": {
+      "id": "uuid",
+      "exercise_id": "uuid",
+      "sets": 3,
+      "reps": "12 a 15",
+      "rest_time": 60,
+      "observations": "Fazer com cuidado",
+      "exercise": {
+        "id": "uuid",
+        "name": "Alongamento Suave",
+        "description": "Exercícios de alongamento",
+        "difficulty": "easy",
+        "video_url": "https://example.com/videos/alongamento.mp4"
+      }
     }
   }
 ]
 ```
 
+**Nota:** 
+- Se `product_id` não é `null` → é um produto (comida/bebida)
+- Se `product_id` é `null` e `exercise_prescription` não é `null` → é um exercício
+
 #### `PATCH /daily-goals/:id`
-Atualiza o status de conclusão de uma meta.
+Atualiza o status de conclusão de um item do plano (produto ou exercício).
 
 **Body:**
 ```json
@@ -258,7 +341,7 @@ Atualiza o status de conclusão de uma meta.
 {
   "id": "uuid",
   "checkin_id": "uuid",
-  "goal_library_id": 1,
+  "product_id": "uuid",
   "is_completed": true
 }
 ```
@@ -266,16 +349,19 @@ Atualiza o status de conclusão de uma meta.
 ## 📝 Regras de Negócio
 
 ### R1: Fluxo de Registro Diário
-- Ao criar um check-in, o sistema busca todas as metas da categoria na biblioteca
-- Cria instâncias dessas metas na tabela `user_daily_goals`
+- Ao criar um check-in com um `pain_state_id`, o sistema:
+  - Busca produtos (comidas/bebidas) vinculados ao estado de dor
+  - Busca exercícios vinculados ao estado de dor
+  - Cria instâncias de produtos na tabela `user_daily_plan`
+  - Cria instâncias de exercícios na tabela `user_daily_plan` com suas prescrições em `exercise_prescriptions`
 - Se já existir um check-in para o dia, retorna o existente
 
 ### R2: Botão de Reset
-- Ao deletar o check-in do dia, todas as metas associadas são removidas automaticamente (cascata)
+- Ao deletar o check-in do dia, todos os itens do plano (produtos e exercícios) e prescrições são removidos automaticamente (cascata)
 - O usuário pode criar um novo check-in após o reset
 
 ### R3: Persistência de Dados
-- As metas do dia são "congeladas" - mesmo que a descrição na biblioteca seja alterada, as metas já geradas permanecem intactas
+- Os itens do plano do dia são "congelados" - mesmo que os produtos ou exercícios sejam alterados na biblioteca, os itens já gerados permanecem intactos
 
 ## 🔒 Validação
 
@@ -329,7 +415,7 @@ docker-compose down -v
 
 ## 📚 Documentação de Integração
 
-Para integração com frontend, consulte a [Documentação de Integração](./INTEGRATION.md) completa, que inclui:
+Para integração com frontend, consulte a [Documentação de Integração](./docs/INTEGRATION.md) completa, que inclui:
 
 - Exemplos de código para React, Vue.js e outras frameworks
 - Modelos de dados TypeScript

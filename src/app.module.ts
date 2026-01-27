@@ -5,9 +5,14 @@ import { join } from 'path';
 import { UsersModule } from './users/users.module';
 import { CategoriesModule } from './categories/categories.module';
 import { DailyCheckinsModule } from './daily-checkins/daily-checkins.module';
-import { GoalLibraryModule } from './goal-library/goal-library.module';
-import { UserDailyGoalsModule } from './user-daily-goals/user-daily-goals.module';
+import { UserDailyPlanModule } from './user-daily-plan/user-daily-plan.module';
 import { AuthModule } from './auth/auth.module';
+import { PainStatesModule } from './pain-states/pain-states.module';
+import { ProductsModule } from './products/products.module';
+import { ExercisesModule } from './exercises/exercises.module';
+import { IngredientsModule } from './ingredients/ingredients.module';
+import { ProductIngredientsModule } from './product-ingredients/product-ingredients.module';
+import { ExercisePrescriptionsModule } from './exercise-prescriptions/exercise-prescriptions.module';
 
 @Module({
   imports: [
@@ -32,9 +37,14 @@ import { AuthModule } from './auth/auth.module';
     UsersModule,
     CategoriesModule,
     DailyCheckinsModule,
-    GoalLibraryModule,
-    UserDailyGoalsModule,
+    UserDailyPlanModule,
     AuthModule,
+    PainStatesModule,
+    ProductsModule,
+    ExercisesModule,
+    IngredientsModule,
+    ProductIngredientsModule,
+    ExercisePrescriptionsModule,
   ],
 })
 export class AppModule {}

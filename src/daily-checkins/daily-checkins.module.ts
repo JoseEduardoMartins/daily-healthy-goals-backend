@@ -3,16 +3,18 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DailyCheckinsService } from './daily-checkins.service';
 import { DailyCheckinsController } from './daily-checkins.controller';
 import { DailyCheckin } from './entities/daily-checkin.entity';
-import { CategoriesModule } from '../categories/categories.module';
-import { GoalLibraryModule } from '../goal-library/goal-library.module';
-import { UserDailyGoalsModule } from '../user-daily-goals/user-daily-goals.module';
+import { PainStatesModule } from '../pain-states/pain-states.module';
+import { ProductsModule } from '../products/products.module';
+import { ExercisesModule } from '../exercises/exercises.module';
+import { UserDailyPlanModule } from '../user-daily-plan/user-daily-plan.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([DailyCheckin]),
-    CategoriesModule,
-    GoalLibraryModule,
-    forwardRef(() => UserDailyGoalsModule),
+    PainStatesModule,
+    ProductsModule,
+    ExercisesModule,
+    forwardRef(() => UserDailyPlanModule),
   ],
   controllers: [DailyCheckinsController],
   providers: [DailyCheckinsService],

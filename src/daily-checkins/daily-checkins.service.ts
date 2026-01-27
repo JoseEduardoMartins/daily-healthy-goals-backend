@@ -8,9 +8,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DailyCheckin } from './entities/daily-checkin.entity';
 import { CreateDailyCheckinDto } from './dto/create-daily-checkin.dto';
-import { CategoriesService } from '../categories/categories.service';
-import { GoalLibraryService } from '../goal-library/goal-library.service';
-import { UserDailyGoalsService } from '../user-daily-goals/user-daily-goals.service';
+import { PainStatesService } from '../pain-states/pain-states.service';
+import { ProductsService } from '../products/products.service';
+import { ExercisesService } from '../exercises/exercises.service';
+import { UserDailyPlanService } from '../user-daily-plan/user-daily-plan.service';
 import { User } from '../users/entities/user.entity';
 
 @Injectable()
@@ -18,10 +19,11 @@ export class DailyCheckinsService {
   constructor(
     @InjectRepository(DailyCheckin)
     private dailyCheckinsRepository: Repository<DailyCheckin>,
-    private categoriesService: CategoriesService,
-    private goalLibraryService: GoalLibraryService,
-    @Inject(forwardRef(() => UserDailyGoalsService))
-    private userDailyGoalsService: UserDailyGoalsService,
+    private painStatesService: PainStatesService,
+    private productsService: ProductsService,
+    private exercisesService: ExercisesService,
+    @Inject(forwardRef(() => UserDailyPlanService))
+    private userDailyPlanService: UserDailyPlanService,
   ) {}
 
   async create(
@@ -44,32 +46,43 @@ export class DailyCheckinsService {
       return existingCheckin;
     }
 
-    // Verificar se a categoria existe
-    const category = await this.categoriesService.findOne(
-      createDailyCheckinDto.category_id,
+    // Verificar se o pain state existe
+    const painState = await this.painStatesService.findOne(
+      createDailyCheckinDto.pain_state_id,
     );
-    if (!category) {
-      throw new NotFoundException('Categoria não encontrada');
+    if (!painState) {
+      throw new NotFoundException('Estado de dor não encontrado');
     }
 
     // Criar o check-in
     const checkin = this.dailyCheckinsRepository.create({
       user_id: user.id,
-      category_id: createDailyCheckinDto.category_id,
+      pain_state_id: createDailyCheckinDto.pain_state_id,
       checkin_date: today,
     });
 
     const savedCheckin = await this.dailyCheckinsRepository.save(checkin);
 
-    // Buscar todas as metas da categoria na biblioteca
-    const goals = await this.goalLibraryService.findByCategoryId(
-      createDailyCheckinDto.category_id,
+    // Buscar todos os produtos para o pain state
+    const products = await this.productsService.findByPainStateId(
+      createDailyCheckinDto.pain_state_id,
     );
 
-    // Criar instâncias das metas para o usuário
-    await this.userDailyGoalsService.createGoalsFromLibrary(
+    // Buscar todos os exercícios para o pain state
+    const exercises = await this.exercisesService.findByPainStateId(
+      createDailyCheckinDto.pain_state_id,
+    );
+
+    // Criar instâncias dos produtos para o usuário
+    await this.userDailyPlanService.createPlansFromProducts(
       savedCheckin.id,
-      goals,
+      products,
+    );
+
+    // Criar instâncias dos exercícios para o usuário
+    await this.userDailyPlanService.createPlansFromExercises(
+      savedCheckin.id,
+      exercises,
     );
 
     // Retornar o check-in com as metas
@@ -79,7 +92,13 @@ export class DailyCheckinsService {
   async findOne(id: string): Promise<DailyCheckin> {
     const checkin = await this.dailyCheckinsRepository.findOne({
       where: { id },
-      relations: ['category', 'user_daily_goals', 'user_daily_goals.goal_library'],
+      relations: [
+        'pain_state',
+        'user_daily_plans',
+        'user_daily_plans.product',
+        'user_daily_plans.exercise_prescription',
+        'user_daily_plans.exercise_prescription.exercise',
+      ],
     });
 
     if (!checkin) {
@@ -96,9 +115,11 @@ export class DailyCheckinsService {
 
     return await this.dailyCheckinsRepository
       .createQueryBuilder('checkin')
-      .leftJoinAndSelect('checkin.category', 'category')
-      .leftJoinAndSelect('checkin.user_daily_goals', 'user_daily_goals')
-      .leftJoinAndSelect('user_daily_goals.goal_library', 'goal_library')
+      .leftJoinAndSelect('checkin.pain_state', 'pain_state')
+      .leftJoinAndSelect('checkin.user_daily_plans', 'user_daily_plans')
+      .leftJoinAndSelect('user_daily_plans.product', 'product')
+      .leftJoinAndSelect('user_daily_plans.exercise_prescription', 'exercise_prescription')
+      .leftJoinAndSelect('exercise_prescription.exercise', 'exercise')
       .where('checkin.user_id = :userId', { userId })
       .andWhere('DATE(checkin.checkin_date) = :date', { date: todayStr })
       .getOne();

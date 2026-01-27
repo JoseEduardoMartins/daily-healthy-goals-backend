@@ -4,19 +4,18 @@ import {
   Patch,
   Param,
   Body,
-  UseGuards,
   Request,
   BadRequestException,
 } from '@nestjs/common';
-import { UserDailyGoalsService } from './user-daily-goals.service';
-import { UpdateDailyGoalDto } from './dto/update-daily-goal.dto';
+import { UserDailyPlanService } from './user-daily-plan.service';
+import { UpdateDailyPlanDto } from './dto/update-daily-plan.dto';
 // TODO: Implementar guard de autenticação quando necessário
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('daily-goals')
-export class UserDailyGoalsController {
+export class UserDailyPlanController {
   constructor(
-    private readonly userDailyGoalsService: UserDailyGoalsService,
+    private readonly userDailyPlanService: UserDailyPlanService,
   ) {}
 
   @Get()
@@ -28,15 +27,15 @@ export class UserDailyGoalsController {
       throw new BadRequestException('User ID é necessário. Implemente autenticação JWT.');
     }
 
-    return await this.userDailyGoalsService.findTodayByUser(userId);
+    return await this.userDailyPlanService.findTodayByUser(userId);
   }
 
   @Patch(':id')
   // @UseGuards(JwtAuthGuard)
   async update(
     @Param('id') id: string,
-    @Body() updateDailyGoalDto: UpdateDailyGoalDto,
+    @Body() updateDailyPlanDto: UpdateDailyPlanDto,
   ) {
-    return await this.userDailyGoalsService.update(id, updateDailyGoalDto);
+    return await this.userDailyPlanService.update(id, updateDailyPlanDto);
   }
 }

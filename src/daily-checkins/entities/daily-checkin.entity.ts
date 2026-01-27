@@ -7,8 +7,8 @@ import {
   OneToMany,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { Category } from '../../categories/entities/category.entity';
-import { UserDailyGoal } from '../../user-daily-goals/entities/user-daily-goal.entity';
+import { PainState } from '../../pain-states/entities/pain-state.entity';
+import { UserDailyPlan } from '../../user-daily-plan/entities/user-daily-plan.entity';
 
 @Entity('daily_checkins')
 export class DailyCheckin {
@@ -18,8 +18,8 @@ export class DailyCheckin {
   @Column({ name: 'user_id' })
   user_id: string;
 
-  @Column({ name: 'category_id' })
-  category_id: number;
+  @Column({ name: 'pain_state_id' })
+  pain_state_id: string;
 
   @Column({ name: 'checkin_date', type: 'date' })
   checkin_date: Date;
@@ -28,13 +28,13 @@ export class DailyCheckin {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ManyToOne(() => Category, (category) => category.daily_checkins)
-  @JoinColumn({ name: 'category_id' })
-  category: Category;
+  @ManyToOne(() => PainState, (painState) => painState.daily_checkins)
+  @JoinColumn({ name: 'pain_state_id' })
+  pain_state: PainState;
 
-  @OneToMany(() => UserDailyGoal, (userGoal) => userGoal.checkin, {
+  @OneToMany(() => UserDailyPlan, (userPlan) => userPlan.checkin, {
     cascade: true,
     onDelete: 'CASCADE',
   })
-  user_daily_goals: UserDailyGoal[];
+  user_daily_plans: UserDailyPlan[];
 }

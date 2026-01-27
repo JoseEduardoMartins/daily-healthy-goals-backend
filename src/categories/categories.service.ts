@@ -12,11 +12,18 @@ export class CategoriesService {
 
   async findAll(): Promise<Category[]> {
     return await this.categoriesRepository.find({
-      order: { id: 'ASC' },
+      order: { name: 'ASC' },
     });
   }
 
-  async findOne(id: number): Promise<Category> {
+  async findByType(type: 'diet' | 'exercise'): Promise<Category[]> {
+    return await this.categoriesRepository.find({
+      where: { type },
+      order: { name: 'ASC' },
+    });
+  }
+
+  async findOne(id: string): Promise<Category> {
     return await this.categoriesRepository.findOne({ where: { id } });
   }
 }
