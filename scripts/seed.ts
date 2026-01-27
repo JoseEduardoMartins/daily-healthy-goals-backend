@@ -3,6 +3,9 @@ import { config } from 'dotenv';
 import { join } from 'path';
 import { Category } from '../src/categories/entities/category.entity';
 import { GoalLibrary } from '../src/goal-library/entities/goal-library.entity';
+import { UserDailyGoal } from '../src/user-daily-goals/entities/user-daily-goal.entity';
+import { DailyCheckin } from '../src/daily-checkins/entities/daily-checkin.entity';
+import { User } from '../src/users/entities/user.entity';
 
 config({ path: join(__dirname, '..', '.env') });
 
@@ -14,7 +17,7 @@ async function seed() {
     username: process.env.DB_USERNAME || 'app_user',
     password: process.env.DB_PASSWORD || 'app_password',
     database: process.env.DB_DATABASE || 'daily_healthy_goals',
-    entities: [Category, GoalLibrary],
+    entities: [Category, GoalLibrary, UserDailyGoal, DailyCheckin, User],
     synchronize: false,
   });
 
