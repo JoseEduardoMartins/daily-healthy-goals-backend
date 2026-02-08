@@ -156,10 +156,69 @@ PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
--- Indexes (se não existirem)
-CREATE INDEX IF NOT EXISTS idx_users_user_type ON users(user_type_id);
-CREATE INDEX IF NOT EXISTS idx_users_plan ON users(plan_id);
-CREATE INDEX IF NOT EXISTS idx_products_user_type ON products(user_type_id);
-CREATE INDEX IF NOT EXISTS idx_products_plan ON products(plan_id);
-CREATE INDEX IF NOT EXISTS idx_exercise_user_type ON exercise(user_type_id);
-CREATE INDEX IF NOT EXISTS idx_exercise_plan ON exercise(plan_id);
+-- Indexes (cria apenas se não existirem)
+SET @idx_exists = (SELECT COUNT(*) FROM information_schema.STATISTICS 
+  WHERE TABLE_SCHEMA = DATABASE() 
+  AND TABLE_NAME = 'users' 
+  AND INDEX_NAME = 'idx_users_user_type');
+SET @sql = IF(@idx_exists = 0, 
+  'CREATE INDEX idx_users_user_type ON users(user_type_id)', 
+  'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM information_schema.STATISTICS 
+  WHERE TABLE_SCHEMA = DATABASE() 
+  AND TABLE_NAME = 'users' 
+  AND INDEX_NAME = 'idx_users_plan');
+SET @sql = IF(@idx_exists = 0, 
+  'CREATE INDEX idx_users_plan ON users(plan_id)', 
+  'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM information_schema.STATISTICS 
+  WHERE TABLE_SCHEMA = DATABASE() 
+  AND TABLE_NAME = 'products' 
+  AND INDEX_NAME = 'idx_products_user_type');
+SET @sql = IF(@idx_exists = 0, 
+  'CREATE INDEX idx_products_user_type ON products(user_type_id)', 
+  'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM information_schema.STATISTICS 
+  WHERE TABLE_SCHEMA = DATABASE() 
+  AND TABLE_NAME = 'products' 
+  AND INDEX_NAME = 'idx_products_plan');
+SET @sql = IF(@idx_exists = 0, 
+  'CREATE INDEX idx_products_plan ON products(plan_id)', 
+  'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM information_schema.STATISTICS 
+  WHERE TABLE_SCHEMA = DATABASE() 
+  AND TABLE_NAME = 'exercise' 
+  AND INDEX_NAME = 'idx_exercise_user_type');
+SET @sql = IF(@idx_exists = 0, 
+  'CREATE INDEX idx_exercise_user_type ON exercise(user_type_id)', 
+  'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @idx_exists = (SELECT COUNT(*) FROM information_schema.STATISTICS 
+  WHERE TABLE_SCHEMA = DATABASE() 
+  AND TABLE_NAME = 'exercise' 
+  AND INDEX_NAME = 'idx_exercise_plan');
+SET @sql = IF(@idx_exists = 0, 
+  'CREATE INDEX idx_exercise_plan ON exercise(plan_id)', 
+  'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

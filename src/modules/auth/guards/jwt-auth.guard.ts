@@ -14,7 +14,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     
     if (!token) {
       // Sem token = visitante anônimo (só recursos públicos)
-      request.user = { role: 'visitante', plan_id: null, user_type_id: null, id: null };
+      request.user = { role: 'visitante', plan_id: null, plan_level: null, user_type_id: null, id: null };
       return true;
     }
 
@@ -25,7 +25,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     // Se houver erro ou usuário não encontrado, trata como visitante anônimo
     if (err || !user || info) {
       const request = context.switchToHttp().getRequest();
-      request.user = { role: 'visitante', plan_id: null, user_type_id: null, id: null };
+      request.user = { role: 'visitante', plan_id: null, plan_level: null, user_type_id: null, id: null };
       return request.user;
     }
     return user;

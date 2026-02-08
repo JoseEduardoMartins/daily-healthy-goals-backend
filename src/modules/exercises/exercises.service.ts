@@ -16,7 +16,8 @@ export class ExercisesService {
     const queryBuilder = this.exercisesRepository
       .createQueryBuilder('exercise')
       .leftJoinAndSelect('exercise.category', 'category')
-      .leftJoinAndSelect('exercise.pain_state', 'pain_state');
+      .leftJoinAndSelect('exercise.pain_state', 'pain_state')
+      .leftJoinAndSelect('exercise.plan', 'plan');
 
     // Aplica filtros baseado no role do usuário
     const conditions = PermissionsHelper.getQueryConditions(user);
@@ -26,8 +27,14 @@ export class ExercisesService {
 
     const exercises = await queryBuilder.orderBy('exercise.name', 'ASC').getMany();
 
-    // Filtra novamente para garantir
-    return PermissionsHelper.filterByAccess(exercises, user);
+    // Adiciona plan_level aos exercícios para filtragem hierárquica
+    const exercisesWithPlanLevel = exercises.map(exercise => ({
+      ...exercise,
+      plan_level: exercise.plan?.level || null,
+    }));
+
+    // Filtra baseado na hierarquia de planos
+    return PermissionsHelper.filterByAccess(exercisesWithPlanLevel, user);
   }
 
   async findOne(id: string, user: CurrentUserPayload): Promise<Exercise> {
@@ -59,7 +66,8 @@ export class ExercisesService {
       .createQueryBuilder('exercise')
       .where('exercise.pain_state_id = :painStateId', { painStateId })
       .leftJoinAndSelect('exercise.category', 'category')
-      .leftJoinAndSelect('exercise.pain_state', 'pain_state');
+      .leftJoinAndSelect('exercise.pain_state', 'pain_state')
+      .leftJoinAndSelect('exercise.plan', 'plan');
 
     // Aplica filtros de permissão
     const conditions = PermissionsHelper.getQueryConditions(user);
@@ -69,7 +77,13 @@ export class ExercisesService {
 
     const exercises = await queryBuilder.orderBy('exercise.name', 'ASC').getMany();
 
-    // Filtra novamente para garantir
-    return PermissionsHelper.filterByAccess(exercises, user);
+    // Adiciona plan_level aos exercícios para filtragem hierárquica
+    const exercisesWithPlanLevel = exercises.map(exercise => ({
+      ...exercise,
+      plan_level: exercise.plan?.level || null,
+    }));
+
+    // Filtra baseado na hierarquia de planos
+    return PermissionsHelper.filterByAccess(exercisesWithPlanLevel, user);
   }
 }

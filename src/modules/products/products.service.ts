@@ -16,7 +16,8 @@ export class ProductsService {
     const queryBuilder = this.productsRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.pain_state', 'pain_state');
+      .leftJoinAndSelect('product.pain_state', 'pain_state')
+      .leftJoinAndSelect('product.plan', 'plan');
 
     // Aplica filtros baseado no role do usuário
     const conditions = PermissionsHelper.getQueryConditions(user);
@@ -26,8 +27,14 @@ export class ProductsService {
 
     const products = await queryBuilder.orderBy('product.name', 'ASC').getMany();
 
-    // Filtra novamente para garantir (caso algum produto tenha restrições específicas)
-    return PermissionsHelper.filterByAccess(products, user);
+    // Adiciona plan_level aos produtos para filtragem hierárquica
+    const productsWithPlanLevel = products.map(product => ({
+      ...product,
+      plan_level: product.plan?.level || null,
+    }));
+
+    // Filtra baseado na hierarquia de planos
+    return PermissionsHelper.filterByAccess(productsWithPlanLevel, user);
   }
 
   async findOne(id: string, user: CurrentUserPayload): Promise<Product> {
@@ -64,7 +71,8 @@ export class ProductsService {
       .createQueryBuilder('product')
       .where('product.pain_state_id = :painStateId', { painStateId })
       .leftJoinAndSelect('product.category', 'category')
-      .leftJoinAndSelect('product.pain_state', 'pain_state');
+      .leftJoinAndSelect('product.pain_state', 'pain_state')
+      .leftJoinAndSelect('product.plan', 'plan');
 
     // Aplica filtros de permissão
     const conditions = PermissionsHelper.getQueryConditions(user);
@@ -74,7 +82,13 @@ export class ProductsService {
 
     const products = await queryBuilder.orderBy('product.name', 'ASC').getMany();
 
-    // Filtra novamente para garantir
-    return PermissionsHelper.filterByAccess(products, user);
+    // Adiciona plan_level aos produtos para filtragem hierárquica
+    const productsWithPlanLevel = products.map(product => ({
+      ...product,
+      plan_level: product.plan?.level || null,
+    }));
+
+    // Filtra baseado na hierarquia de planos
+    return PermissionsHelper.filterByAccess(productsWithPlanLevel, user);
   }
 }

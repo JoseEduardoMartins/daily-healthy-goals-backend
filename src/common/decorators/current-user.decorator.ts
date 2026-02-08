@@ -5,6 +5,7 @@ export interface CurrentUserPayload {
   email?: string;
   role: string;
   plan_id?: string | null;
+  plan_level?: string | null; // 'bronze', 'prata', 'ouro'
   user_type_id?: string | null;
 }
 
