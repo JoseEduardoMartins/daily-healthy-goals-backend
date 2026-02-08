@@ -8,7 +8,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { UserDailyPlanService } from './user-daily-plan.service';
-import { UpdateDailyPlanDto } from './dto/update-daily-plan.dto';
+import { UpdateDailyPlanDto } from '../../common/dtos/user-daily-plan/update-daily-plan.dto';
 // TODO: Implementar guard de autenticação quando necessário
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserDailyPlan } from './entities/user-daily-plan.entity';
-import { UpdateDailyPlanDto } from './dto/update-daily-plan.dto';
+import { UpdateDailyPlanDto } from '../../common/dtos/user-daily-plan/update-daily-plan.dto';
 import { Product } from '../products/entities/product.entity';
 import { Exercise } from '../exercises/entities/exercise.entity';
 import { DailyCheckinsService } from '../daily-checkins/daily-checkins.service';

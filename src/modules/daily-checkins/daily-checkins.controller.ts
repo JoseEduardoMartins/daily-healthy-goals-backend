@@ -11,7 +11,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { DailyCheckinsService } from './daily-checkins.service';
-import { CreateDailyCheckinDto } from './dto/create-daily-checkin.dto';
+import { CreateDailyCheckinDto } from '../../common/dtos/daily-checkins/create-daily-checkin.dto';
 // TODO: Implementar guard de autenticação quando necessário
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
