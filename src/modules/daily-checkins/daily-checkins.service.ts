@@ -63,14 +63,16 @@ export class DailyCheckinsService {
 
     const savedCheckin = await this.dailyCheckinsRepository.save(checkin);
 
-    // Buscar todos os produtos para o pain state
+    // Buscar todos os produtos para o pain state (filtrados por permissão do usuário)
     const products = await this.productsService.findByPainStateId(
       createDailyCheckinDto.pain_state_id,
+      user,
     );
 
-    // Buscar todos os exercícios para o pain state
+    // Buscar todos os exercícios para o pain state (filtrados por permissão do usuário)
     const exercises = await this.exercisesService.findByPainStateId(
       createDailyCheckinDto.pain_state_id,
+      user,
     );
 
     // Criar instâncias dos produtos para o usuário

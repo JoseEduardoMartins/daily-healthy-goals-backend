@@ -10,6 +10,8 @@ import { Category } from '../../categories/entities/category.entity';
 import { PainState } from '../../pain-states/entities/pain-state.entity';
 import { ProductIngredient } from '../../product-ingredients/entities/product-ingredient.entity';
 import { UserDailyPlan } from '../../user-daily-plan/entities/user-daily-plan.entity';
+import { UserType } from '../../user-types/entities/user-type.entity';
+import { Plan } from '../../plans/entities/plan.entity';
 
 @Entity('products')
 export class Product {
@@ -40,6 +42,12 @@ export class Product {
   @Column({ name: 'recipe_prep', type: 'text', nullable: true })
   recipe_prep: string;
 
+  @Column({ name: 'user_type_id', nullable: true })
+  user_type_id: string | null;
+
+  @Column({ name: 'plan_id', nullable: true })
+  plan_id: string | null;
+
   @ManyToOne(() => Category, (category) => category.products)
   @JoinColumn({ name: 'category_id' })
   category: Category;
@@ -47,6 +55,14 @@ export class Product {
   @ManyToOne(() => PainState, (painState) => painState.products)
   @JoinColumn({ name: 'pain_state_id' })
   pain_state: PainState;
+
+  @ManyToOne(() => UserType, (userType) => userType.products, { nullable: true })
+  @JoinColumn({ name: 'user_type_id' })
+  user_type: UserType | null;
+
+  @ManyToOne(() => Plan, (plan) => plan.products, { nullable: true })
+  @JoinColumn({ name: 'plan_id' })
+  plan: Plan | null;
 
   @OneToMany(() => ProductIngredient, (productIngredient) => productIngredient.product)
   product_ingredients: ProductIngredient[];

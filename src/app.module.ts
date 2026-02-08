@@ -12,6 +12,8 @@ import { ExercisesModule } from './modules/exercises/exercises.module';
 import { IngredientsModule } from './modules/ingredients/ingredients.module';
 import { ProductIngredientsModule } from './modules/product-ingredients/product-ingredients.module';
 import { ExercisePrescriptionsModule } from './modules/exercise-prescriptions/exercise-prescriptions.module';
+import { UserTypesModule } from './modules/user-types/user-types.module';
+import { PlansModule } from './modules/plans/plans.module';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 import jwtConfig from './config/jwt.config';
@@ -25,8 +27,7 @@ import mailConfig from './config/mail.config';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) =>
-        configService.get('database'),
+      useFactory: (configService: ConfigService) => configService.get('database'),
       inject: [ConfigService],
     }),
     UsersModule,
@@ -40,6 +41,8 @@ import mailConfig from './config/mail.config';
     IngredientsModule,
     ProductIngredientsModule,
     ExercisePrescriptionsModule,
+    UserTypesModule,
+    PlansModule,
   ],
 })
 export class AppModule {}
