@@ -79,15 +79,21 @@ npm run seed
 ### Tabelas
 
 - **users** - Usuários do sistema
+- **user_types** - Tipos de usuário (admin, visitante, pagante) para controle de acesso
+- **plans** - Planos de assinatura (bronze, silver, gold, etc.) para controle de acesso
 - **pain_states** - Estados de dor/humor (ex: "Com Dor", "Inchada", "Normal")
 - **categories** - Categorias de produtos e exercícios (tipo: 'diet' ou 'exercise')
 - **products** - Produtos (comidas/bebidas) vinculados a categorias e estados de dor
-- **exercises** - Exercícios vinculados a categorias e estados de dor
+- **exercise** - Exercícios vinculados a categorias e estados de dor
 - **ingredients** - Ingredientes para produtos
 - **product_ingredients** - Relação entre produtos e ingredientes
 - **daily_checkins** - Registros diários dos usuários
 - **user_daily_plan** - Plano diário do usuário (produtos e exercícios)
 - **exercise_prescriptions** - Prescrições de exercícios (séries, repetições, descanso)
+
+### Diagrama Completo
+
+Para visualizar o diagrama completo de relacionamento de classes e todas as tabelas com seus campos e relacionamentos, consulte: [Diagrama de Banco de Dados](./docs/DATABASE_SCHEMA.md)
 
 ## 🔌 Endpoints da API
 
