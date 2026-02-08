@@ -1,6 +1,7 @@
 import {
   Injectable,
   NotFoundException,
+  UnauthorizedException,
   Inject,
   forwardRef,
 } from '@nestjs/common';
@@ -12,7 +13,7 @@ import { PainStatesService } from '../pain-states/pain-states.service';
 import { ProductsService } from '../products/products.service';
 import { ExercisesService } from '../exercises/exercises.service';
 import { UserDailyPlanService } from '../user-daily-plan/user-daily-plan.service';
-import { User } from '../users/entities/user.entity';
+import { CurrentUserPayload } from '../../common/decorators/current-user.decorator';
 
 @Injectable()
 export class DailyCheckinsService {
@@ -27,9 +28,14 @@ export class DailyCheckinsService {
   ) {}
 
   async create(
-    user: User,
+    user: CurrentUserPayload,
     createDailyCheckinDto: CreateDailyCheckinDto,
   ): Promise<DailyCheckin> {
+    // Visitantes anônimos não podem criar check-ins
+    if (!user.id) {
+      throw new UnauthorizedException('Autenticação necessária para criar check-in');
+    }
+
     // Verificar se já existe um check-in para o usuário hoje
     const today = new Date();
     today.setHours(0, 0, 0, 0);

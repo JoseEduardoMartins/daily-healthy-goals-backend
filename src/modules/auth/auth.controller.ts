@@ -13,25 +13,19 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Registrar novo usuário' })
   @ApiBody({ type: RegisterDto })
-  @ApiResponse({ status: 201, description: 'Usuário criado com sucesso' })
+  @ApiResponse({ status: 201, description: 'Usuário criado com sucesso e token gerado' })
   @ApiResponse({ status: 409, description: 'Email já está em uso' })
   async register(@Body() registerDto: RegisterDto) {
-    const user = await this.authService.register(registerDto);
-    // Não retornar a senha
-    const { password, ...result } = user;
-    return result;
+    return await this.authService.register(registerDto);
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login de usuário' })
   @ApiBody({ type: LoginDto })
-  @ApiResponse({ status: 200, description: 'Login realizado com sucesso' })
+  @ApiResponse({ status: 200, description: 'Login realizado com sucesso e token gerado' })
   @ApiResponse({ status: 401, description: 'Credenciais inválidas' })
   async login(@Body() loginDto: LoginDto) {
-    const user = await this.authService.login(loginDto);
-    // Não retornar a senha
-    const { password, ...result } = user;
-    return result;
+    return await this.authService.login(loginDto);
   }
 }

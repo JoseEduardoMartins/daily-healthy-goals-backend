@@ -1,27 +1,24 @@
-import { Controller, Get, Param, Query, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiHeader } from '@nestjs/swagger';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { ExercisesService } from './exercises.service';
-import { UsersService } from '../users/users.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser, CurrentUserPayload } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('exercises')
 @Controller('exercises')
+@UseGuards(JwtAuthGuard)
 export class ExercisesController {
-  constructor(
-    private readonly exercisesService: ExercisesService,
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly exercisesService: ExercisesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar exercícios (filtrados por tipo/plano do usuário)' })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Listar exercícios (filtrados automaticamente por role/plano do token)' })
   @ApiQuery({ name: 'pain_state_id', required: false, description: 'Filtrar por estado de dor' })
-  @ApiHeader({ name: 'user-id', required: false, description: 'ID do usuário (opcional)' })
   @ApiResponse({ status: 200, description: 'Lista de exercícios retornada com sucesso' })
   async findAll(
-    @Query('pain_state_id') painStateId?: string,
-    @Request() req?: any,
+    @Query('pain_state_id') painStateId: string | undefined,
+    @CurrentUser() user: CurrentUserPayload,
   ) {
-    const user = await this.getUserFromRequest(req);
-    
     if (painStateId) {
       return this.exercisesService.findByPainStateId(painStateId, user);
     }
@@ -29,26 +26,15 @@ export class ExercisesController {
   }
 
   @Get(':id')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Obter exercício por ID' })
   @ApiParam({ name: 'id', description: 'UUID do exercício' })
-  @ApiHeader({ name: 'user-id', required: false, description: 'ID do usuário (opcional)' })
   @ApiResponse({ status: 200, description: 'Exercício retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Exercício não encontrado' })
-  async findOne(@Param('id') id: string, @Request() req?: any) {
-    const user = await this.getUserFromRequest(req);
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.exercisesService.findOne(id, user);
-  }
-
-  private async getUserFromRequest(req: any) {
-    if (!req) return undefined;
-    
-    const userId = req.headers['user-id'] || req.user?.id;
-    if (!userId) return undefined;
-
-    try {
-      return await this.usersService.findOne(userId);
-    } catch {
-      return undefined;
-    }
   }
 }

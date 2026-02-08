@@ -31,31 +31,87 @@ Content-Type: application/json
 Accept: application/json
 ```
 
-Para endpoints que requerem autenticação (temporariamente):
+Para endpoints que requerem autenticação:
 
 ```http
-user-id: <uuid-do-usuario>
+Authorization: Bearer <jwt-token>
 ```
+
+O token é obtido após login/registro e deve ser enviado em todas as requisições autenticadas.
 
 ## 🔐 Autenticação
 
-⚠️ **Nota Temporária:** Atualmente, a autenticação está usando um header `user-id`. Para produção, será implementado JWT.
+O sistema utiliza **JWT (JSON Web Tokens)** para autenticação. O token contém informações sobre o usuário, incluindo seu **role** (tipo de usuário), que determina quais recursos ele pode acessar.
 
 ### Fluxo de Autenticação
 
 1. Usuário se registra via `POST /auth/register` ou faz login via `POST /auth/login`
-2. Backend retorna os dados do usuário (sem senha)
-3. Frontend armazena o `id` do usuário
-4. Frontend envia o `user-id` no header de todas as requisições autenticadas
+2. Backend retorna um `access_token` JWT e dados do usuário
+3. Frontend armazena o token e dados do usuário
+4. Frontend envia o token no header `Authorization: Bearer <token>` em todas as requisições autenticadas
+
+### Resposta de Login/Registro
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "João Silva",
+    "email": "joao@example.com",
+    "weight": 75.5,
+    "height": 1.75,
+    "role": "pagante",
+    "plan_id": "bronze-plan-uuid",
+    "user_type_id": "pagante-type-uuid"
+  }
+}
+```
 
 ### Armazenamento no Frontend
 
 ```javascript
 // Após registro/login bem-sucedido
-localStorage.setItem('userId', user.id);
-// ou
-sessionStorage.setItem('userId', user.id);
+const { access_token, user } = response;
+
+localStorage.setItem('access_token', access_token);
+localStorage.setItem('user', JSON.stringify(user));
 ```
+
+### Enviando Token nas Requisições
+
+```javascript
+// Headers para requisições autenticadas
+const token = localStorage.getItem('access_token');
+
+fetch('http://localhost:3000/products', {
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  }
+});
+```
+
+### Acesso Anônimo (Sem Token)
+
+Alguns endpoints podem ser acessados **sem token** (visitante anônimo):
+- `GET /products` - Retorna apenas produtos públicos
+- `GET /exercises` - Retorna apenas exercícios públicos
+- `GET /pain-states` - Lista estados de dor
+- `GET /categories` - Lista categorias
+
+⚠️ **Importante**: Para acesso completo, sempre envie o token quando disponível.
+
+### Sistema de Controle de Acesso
+
+O backend filtra automaticamente produtos e exercícios baseado no **role** do usuário:
+
+- **Admin**: Acesso a tudo
+- **Visitante (com token)**: Produtos públicos + produtos de visitante
+- **Visitante (sem token)**: Apenas produtos públicos
+- **Pagante**: Produtos públicos + produtos de visitante + produtos do seu plano
+
+📖 **Documentação Completa**: Veja [ACCESS_CONTROL.md](./ACCESS_CONTROL.md) para detalhes completos sobre o sistema de controle de acesso.
 
 ## 📡 Endpoints
 
@@ -91,12 +147,17 @@ Content-Type: application/json
 **Resposta de Sucesso (201 Created):**
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "name": "João Silva",
-  "email": "joao@example.com",
-  "weight": 75.5,
-  "height": 1.75,
-  "created_at": "2024-01-15T10:30:00.000Z"
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "João Silva",
+    "email": "joao@example.com",
+    "weight": 75.5,
+    "height": 1.75,
+    "role": "visitante",
+    "plan_id": null,
+    "user_type_id": null
+  }
 }
 ```
 
@@ -133,12 +194,17 @@ Content-Type: application/json
 **Resposta de Sucesso (200 OK):**
 ```json
 {
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "name": "João Silva",
-  "email": "joao@example.com",
-  "weight": 75.5,
-  "height": 1.75,
-  "created_at": "2024-01-15T10:30:00.000Z"
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "João Silva",
+    "email": "joao@example.com",
+    "weight": 75.5,
+    "height": 1.75,
+    "role": "visitante",
+    "plan_id": null,
+    "user_type_id": null
+  }
 }
 ```
 
@@ -250,7 +316,7 @@ Content-Type: application/json
 **Headers:**
 ```http
 Content-Type: application/json
-user-id: 550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer <jwt-token>
 ```
 
 **Body:**
@@ -334,12 +400,12 @@ user-id: 550e8400-e29b-41d4-a716-446655440000
 }
 ```
 
-**Resposta de Erro (400 Bad Request):**
+**Resposta de Erro (401 Unauthorized):**
 ```json
 {
-  "statusCode": 400,
-  "message": "User ID é necessário. Implemente autenticação JWT.",
-  "error": "Bad Request"
+  "statusCode": 401,
+  "message": "Autenticação necessária",
+  "error": "Unauthorized"
 }
 ```
 
@@ -354,7 +420,7 @@ user-id: 550e8400-e29b-41d4-a716-446655440000
 **Headers:**
 ```http
 Content-Type: application/json
-user-id: 550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer <jwt-token>
 ```
 
 **Resposta de Sucesso (200 OK):**
@@ -455,7 +521,7 @@ user-id: 550e8400-e29b-41d4-a716-446655440000
 **Headers:**
 ```http
 Content-Type: application/json
-user-id: 550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer <jwt-token>
 ```
 
 **Parâmetros de URL:**
@@ -501,7 +567,7 @@ user-id: 550e8400-e29b-41d4-a716-446655440000
 **Headers:**
 ```http
 Content-Type: application/json
-user-id: 550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer <jwt-token>
 ```
 
 **Resposta de Sucesso (204 No Content):**
@@ -704,9 +770,9 @@ class ApiService {
       'Accept': 'application/json',
     };
 
-    const userId = localStorage.getItem('userId');
-    if (userId) {
-      headers['user-id'] = userId;
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     return headers;
@@ -724,9 +790,10 @@ class ApiService {
       throw new Error(error.message || 'Erro ao registrar');
     }
 
-    const user = await response.json();
-    localStorage.setItem('userId', user.id);
-    return user;
+    const { access_token, user } = await response.json();
+    localStorage.setItem('access_token', access_token);
+    localStorage.setItem('user', JSON.stringify(user));
+    return { access_token, user };
   }
 
   async login(loginData: LoginData): Promise<User> {
@@ -741,9 +808,10 @@ class ApiService {
       throw new Error(error.message || 'Erro ao fazer login');
     }
 
-    const user = await response.json();
-    localStorage.setItem('userId', user.id);
-    return user;
+    const { access_token, user } = await response.json();
+    localStorage.setItem('access_token', access_token);
+    localStorage.setItem('user', JSON.stringify(user));
+    return { access_token, user };
   }
 
   async getPainStates(): Promise<PainState[]> {
@@ -1266,24 +1334,24 @@ curl http://localhost:3000/pain-states
 # 4. Listar categorias
 curl http://localhost:3000/categories
 
-# 5. Criar check-in (substitua USER_ID e PAIN_STATE_ID)
+# 5. Criar check-in (substitua TOKEN e PAIN_STATE_ID)
 curl -X POST http://localhost:3000/daily-checkin \
   -H "Content-Type: application/json" \
-  -H "user-id: USER_ID_AQUI" \
+  -H "Authorization: Bearer TOKEN_AQUI" \
   -d '{"pain_state_id": "PAIN_STATE_ID_AQUI"}'
 
 # 6. Listar plano do dia (retorna produtos e exercícios)
-curl -H "user-id: USER_ID_AQUI" http://localhost:3000/daily-goals
+curl -H "Authorization: Bearer TOKEN_AQUI" http://localhost:3000/daily-goals
 
-# 7. Atualizar item do plano (substitua PLAN_ID)
+# 7. Atualizar item do plano (substitua TOKEN e PLAN_ID)
 curl -X PATCH http://localhost:3000/daily-goals/PLAN_ID_AQUI \
   -H "Content-Type: application/json" \
-  -H "user-id: USER_ID_AQUI" \
+  -H "Authorization: Bearer TOKEN_AQUI" \
   -d '{"is_completed": true}'
 
 # 8. Resetar dia
 curl -X DELETE http://localhost:3000/daily-checkin/today \
-  -H "user-id: USER_ID_AQUI"
+  -H "Authorization: Bearer TOKEN_AQUI"
 ```
 
 ---
@@ -1364,4 +1432,10 @@ Para dúvidas ou problemas na integração:
 
 ---
 
-**Última atualização:** Janeiro 2026
+## 📚 Documentação Adicional
+
+- **[ACCESS_CONTROL.md](./ACCESS_CONTROL.md)** - Documentação completa sobre o sistema de controle de acesso, roles e permissões
+
+---
+
+**Última atualização:** Fevereiro 2026

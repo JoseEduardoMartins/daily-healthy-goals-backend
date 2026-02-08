@@ -1,27 +1,24 @@
-import { Controller, Get, Param, Query, Request } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiHeader } from '@nestjs/swagger';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
-import { UsersService } from '../users/users.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser, CurrentUserPayload } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('products')
 @Controller('products')
+@UseGuards(JwtAuthGuard)
 export class ProductsController {
-  constructor(
-    private readonly productsService: ProductsService,
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly productsService: ProductsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar produtos (filtrados por tipo/plano do usuário)' })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Listar produtos (filtrados automaticamente por role/plano do token)' })
   @ApiQuery({ name: 'pain_state_id', required: false, description: 'Filtrar por estado de dor' })
-  @ApiHeader({ name: 'user-id', required: false, description: 'ID do usuário (opcional)' })
   @ApiResponse({ status: 200, description: 'Lista de produtos retornada com sucesso' })
   async findAll(
-    @Query('pain_state_id') painStateId?: string,
-    @Request() req?: any,
+    @Query('pain_state_id') painStateId: string | undefined,
+    @CurrentUser() user: CurrentUserPayload,
   ) {
-    const user = await this.getUserFromRequest(req);
-    
     if (painStateId) {
       return this.productsService.findByPainStateId(painStateId, user);
     }
@@ -29,26 +26,15 @@ export class ProductsController {
   }
 
   @Get(':id')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Obter produto por ID' })
   @ApiParam({ name: 'id', description: 'UUID do produto' })
-  @ApiHeader({ name: 'user-id', required: false, description: 'ID do usuário (opcional)' })
   @ApiResponse({ status: 200, description: 'Produto retornado com sucesso' })
   @ApiResponse({ status: 404, description: 'Produto não encontrado' })
-  async findOne(@Param('id') id: string, @Request() req?: any) {
-    const user = await this.getUserFromRequest(req);
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
     return this.productsService.findOne(id, user);
-  }
-
-  private async getUserFromRequest(req: any) {
-    if (!req) return undefined;
-    
-    const userId = req.headers['user-id'] || req.user?.id;
-    if (!userId) return undefined;
-
-    try {
-      return await this.usersService.findOne(userId);
-    } catch {
-      return undefined;
-    }
   }
 }

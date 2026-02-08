@@ -1,61 +1,63 @@
-import { User } from '../../modules/users/entities/user.entity';
+import { CurrentUserPayload } from '../decorators/current-user.decorator';
 
 /**
  * Verifica se um usuário pode acessar um recurso baseado no tipo e plano
  * 
  * Regras:
  * - admin: acesso a tudo
- * - visitante: apenas recursos de visitante (user_type_id = visitante, plan_id = null)
- * - pagante: recursos de visitante + recursos do seu plano e planos inferiores
+ * - visitante: apenas recursos de visitante (user_type_id = visitante, plan_id = null) + recursos públicos
+ * - pagante: recursos de visitante + recursos do seu plano + recursos públicos
  */
 export class PermissionsHelper {
   /**
    * Verifica se o usuário pode acessar um recurso
    */
   static canAccess(
-    user: User,
+    user: CurrentUserPayload,
     resourceUserTypeId: string | null,
     resourcePlanId: string | null,
   ): boolean {
     // Admin tem acesso a tudo
-    if (user.user_type?.name === 'admin') {
+    if (user.role === 'admin') {
       return true;
     }
 
-    // Se o recurso não tem restrições (null), todos podem acessar
+    // Se o recurso não tem restrições (null), todos podem acessar (público)
     if (!resourceUserTypeId && !resourcePlanId) {
       return true;
     }
 
-    // Visitante só pode acessar recursos de visitante
-    if (user.user_type?.name === 'visitante') {
-      return resourceUserTypeId === user.user_type_id && !resourcePlanId;
+    // Visitante só pode acessar recursos públicos ou de visitante
+    if (user.role === 'visitante') {
+      // Recursos públicos (sem restrições)
+      if (!resourceUserTypeId && !resourcePlanId) {
+        return true;
+      }
+      // Recursos de visitante (user_type_id = visitante, plan_id = null)
+      // Visitante autenticado pode ver recursos de visitante
+      if (user.user_type_id && resourceUserTypeId === user.user_type_id && !resourcePlanId) {
+        return true;
+      }
+      // Visitante anônimo (sem user_type_id) só vê recursos públicos
+      return false;
     }
 
     // Pagante pode acessar:
-    // 1. Recursos de visitante (user_type_id = visitante, plan_id = null)
-    // 2. Recursos do seu plano ou planos inferiores
-    if (user.user_type?.name === 'pagante') {
-      // Recursos de visitante
-      if (resourceUserTypeId && resourceUserTypeId !== user.user_type_id && !resourcePlanId) {
-        return false; // Não é recurso de visitante
+    // 1. Recursos públicos (sem restrições)
+    // 2. Recursos de visitante (user_type_id = visitante, plan_id = null)
+    // 3. Recursos do seu plano
+    if (user.role === 'pagante') {
+      // Recursos públicos
+      if (!resourceUserTypeId && !resourcePlanId) {
+        return true;
       }
 
-      // Se tem plan_id, verifica se o usuário tem plano e se é compatível
+      // Se tem plan_id, verifica se o usuário tem o mesmo plano
       if (resourcePlanId) {
-        if (!user.plan_id) {
-          return false; // Usuário não tem plano
-        }
-
-        // Verifica hierarquia de planos
-        return this.canAccessPlan(user.plan?.level || '', resourcePlanId);
+        return user.plan_id === resourcePlanId;
       }
 
-      // Se não tem plan_id mas tem user_type_id, verifica se é do mesmo tipo
-      if (resourceUserTypeId) {
-        return resourceUserTypeId === user.user_type_id;
-      }
-
+      // Recursos de visitante (sem plan_id) são acessíveis por pagante
       return true;
     }
 
@@ -63,50 +65,63 @@ export class PermissionsHelper {
   }
 
   /**
-   * Verifica se um plano pode acessar outro plano baseado na hierarquia
-   * bronze < silver < gold < platinum
+   * Filtra recursos baseado no role e plan_id do usuário
+   * Retorna apenas recursos que o usuário pode acessar
    */
-  private static canAccessPlan(
-    userPlanLevel: string,
-    resourcePlanId: string,
-  ): boolean {
-    // TODO: Implementar lógica de hierarquia quando necessário
-    // Por enquanto, apenas verifica se o usuário tem o mesmo plano
-    // Isso será expandido quando houver mais planos
-    return true; // Simplificado por enquanto
+  static filterByAccess<T extends { user_type_id?: string | null; plan_id?: string | null }>(
+    resources: T[],
+    user: CurrentUserPayload,
+  ): T[] {
+    return resources.filter((resource) =>
+      this.canAccess(user, resource.user_type_id || null, resource.plan_id || null),
+    );
   }
 
   /**
-   * Cria query builder conditions para filtrar recursos baseado no usuário
+   * Cria condições SQL para filtrar recursos baseado no role do usuário
    */
-  static getAccessConditions(user: User) {
-    const conditions: any = {};
-
+  static getQueryConditions(user: CurrentUserPayload) {
     // Admin: sem filtros (acessa tudo)
-    if (user.user_type?.name === 'admin') {
-      return {}; // Retorna vazio para não filtrar
+    if (user.role === 'admin') {
+      return null; // Sem filtros
     }
 
-    // Visitante: apenas recursos de visitante
-    if (user.user_type?.name === 'visitante') {
+    // Visitante: apenas recursos públicos (sem restrições) ou de visitante
+    if (user.role === 'visitante') {
+      // Se visitante autenticado (tem user_type_id), pode ver recursos públicos + recursos de visitante
+      if (user.user_type_id) {
+        return {
+          condition: '(user_type_id IS NULL AND plan_id IS NULL) OR (user_type_id = :userTypeId AND plan_id IS NULL)',
+          params: { userTypeId: user.user_type_id },
+        };
+      }
+      // Visitante anônimo (sem token): apenas recursos públicos
       return {
-        user_type_id: user.user_type_id,
-        plan_id: null,
+        condition: '(user_type_id IS NULL AND plan_id IS NULL)',
+        params: {},
       };
     }
 
-    // Pagante: recursos de visitante + recursos do seu plano
-    if (user.user_type?.name === 'pagante') {
-      // Retorna condições que permitem:
-      // 1. Recursos de visitante (user_type_id = visitante, plan_id = null)
-      // 2. Recursos do plano do usuário
-      // Isso será implementado com OR na query
+    // Pagante: recursos públicos + recursos de visitante + recursos do seu plano
+    if (user.role === 'pagante') {
+      if (user.plan_id) {
+        return {
+          condition:
+            '(user_type_id IS NULL AND plan_id IS NULL) OR (plan_id = :planId)',
+          params: { planId: user.plan_id },
+        };
+      }
+      // Se não tem plano, apenas recursos públicos
       return {
-        user_type_id: user.user_type_id,
-        plan_id: user.plan_id,
+        condition: '(user_type_id IS NULL AND plan_id IS NULL)',
+        params: {},
       };
     }
 
-    return conditions;
+    // Sem role: apenas recursos públicos
+    return {
+      condition: '(user_type_id IS NULL AND plan_id IS NULL)',
+      params: {},
+    };
   }
 }

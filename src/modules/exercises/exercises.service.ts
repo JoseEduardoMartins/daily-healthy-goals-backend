@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Exercise } from './entities/exercise.entity';
-import { User } from '../users/entities/user.entity';
+import { CurrentUserPayload } from '../../common/decorators/current-user.decorator';
 import { PermissionsHelper } from '../../common/helpers/permissions.helper';
 
 @Injectable()
@@ -12,46 +12,28 @@ export class ExercisesService {
     private exercisesRepository: Repository<Exercise>,
   ) {}
 
-  async findAll(user?: User): Promise<Exercise[]> {
+  async findAll(user: CurrentUserPayload): Promise<Exercise[]> {
     const queryBuilder = this.exercisesRepository
       .createQueryBuilder('exercise')
       .leftJoinAndSelect('exercise.category', 'category')
-      .leftJoinAndSelect('exercise.pain_state', 'pain_state')
-      .leftJoinAndSelect('exercise.user_type', 'user_type')
-      .leftJoinAndSelect('exercise.plan', 'plan');
+      .leftJoinAndSelect('exercise.pain_state', 'pain_state');
 
-    // Se não tem usuário, retorna apenas recursos públicos (sem restrições)
-    if (!user) {
-      queryBuilder.where('exercise.user_type_id IS NULL AND exercise.plan_id IS NULL');
-    } else {
-      // Admin vê tudo
-      if (user.user_type?.name === 'admin') {
-        // Sem filtros
-      } else if (user.user_type?.name === 'visitante') {
-        // Visitante: apenas recursos de visitante
-        queryBuilder.where(
-          '(exercise.user_type_id = :userTypeId AND exercise.plan_id IS NULL)',
-          { userTypeId: user.user_type_id },
-        );
-      } else if (user.user_type?.name === 'pagante') {
-        // Pagante: recursos de visitante + recursos do seu plano
-        queryBuilder.where(
-          '(exercise.user_type_id = :userTypeId AND exercise.plan_id IS NULL) OR (exercise.plan_id = :planId)',
-          { userTypeId: user.user_type_id, planId: user.plan_id },
-        );
-      } else {
-        // Sem tipo definido: apenas recursos públicos
-        queryBuilder.where('exercise.user_type_id IS NULL AND exercise.plan_id IS NULL');
-      }
+    // Aplica filtros baseado no role do usuário
+    const conditions = PermissionsHelper.getQueryConditions(user);
+    if (conditions) {
+      queryBuilder.where(conditions.condition, conditions.params);
     }
 
-    return await queryBuilder.orderBy('exercise.name', 'ASC').getMany();
+    const exercises = await queryBuilder.orderBy('exercise.name', 'ASC').getMany();
+
+    // Filtra novamente para garantir
+    return PermissionsHelper.filterByAccess(exercises, user);
   }
 
-  async findOne(id: string, user?: User): Promise<Exercise> {
+  async findOne(id: string, user: CurrentUserPayload): Promise<Exercise> {
     const exercise = await this.exercisesRepository.findOne({
       where: { id },
-      relations: ['category', 'pain_state', 'user_type', 'plan'],
+      relations: ['category', 'pain_state'],
     });
 
     if (!exercise) {
@@ -59,37 +41,35 @@ export class ExercisesService {
     }
 
     // Verifica permissão de acesso
-    if (user && !PermissionsHelper.canAccess(user, exercise.user_type_id, exercise.plan_id)) {
+    if (
+      !PermissionsHelper.canAccess(
+        user,
+        exercise.user_type_id || null,
+        exercise.plan_id || null,
+      )
+    ) {
       throw new NotFoundException('Exercício não encontrado');
     }
 
     return exercise;
   }
 
-  async findByPainStateId(painStateId: string, user?: User): Promise<Exercise[]> {
+  async findByPainStateId(painStateId: string, user: CurrentUserPayload): Promise<Exercise[]> {
     const queryBuilder = this.exercisesRepository
       .createQueryBuilder('exercise')
-      .where('exercise.pain_state_id = :painStateId', { painStateId });
+      .where('exercise.pain_state_id = :painStateId', { painStateId })
+      .leftJoinAndSelect('exercise.category', 'category')
+      .leftJoinAndSelect('exercise.pain_state', 'pain_state');
 
     // Aplica filtros de permissão
-    if (!user) {
-      queryBuilder.andWhere('exercise.user_type_id IS NULL AND exercise.plan_id IS NULL');
-    } else if (user.user_type?.name === 'admin') {
-      // Admin vê tudo
-    } else if (user.user_type?.name === 'visitante') {
-      queryBuilder.andWhere(
-        '(exercise.user_type_id = :userTypeId AND exercise.plan_id IS NULL)',
-        { userTypeId: user.user_type_id },
-      );
-    } else if (user.user_type?.name === 'pagante') {
-      queryBuilder.andWhere(
-        '(exercise.user_type_id = :userTypeId AND exercise.plan_id IS NULL) OR (exercise.plan_id = :planId)',
-        { userTypeId: user.user_type_id, planId: user.plan_id },
-      );
-    } else {
-      queryBuilder.andWhere('exercise.user_type_id IS NULL AND exercise.plan_id IS NULL');
+    const conditions = PermissionsHelper.getQueryConditions(user);
+    if (conditions) {
+      queryBuilder.andWhere(conditions.condition, conditions.params);
     }
 
-    return await queryBuilder.orderBy('exercise.name', 'ASC').getMany();
+    const exercises = await queryBuilder.orderBy('exercise.name', 'ASC').getMany();
+
+    // Filtra novamente para garantir
+    return PermissionsHelper.filterByAccess(exercises, user);
   }
 }
