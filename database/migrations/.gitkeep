@@ -1,0 +1,2 @@
+# Este diretório contém as migrations do banco de dados
+# As migrations são executadas em ordem alfabética pelo script setup.sh

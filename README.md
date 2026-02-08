@@ -46,6 +46,8 @@ Isso irá:
 
 5. (Opcional) Popular o banco com dados iniciais:
 ```bash
+docker-compose exec app npm run setup:db
+# ou
 docker-compose exec app npm run seed
 ```
 
@@ -67,6 +69,8 @@ npm run start:dev
 
 5. (Opcional) Popular o banco com dados iniciais (categorias e metas):
 ```bash
+npm run setup:db
+# ou
 npm run seed
 ```
 
