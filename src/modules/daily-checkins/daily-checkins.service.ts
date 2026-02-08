@@ -27,11 +27,93 @@ export class DailyCheckinsService {
     private userDailyPlanService: UserDailyPlanService,
   ) {}
 
+  /**
+   * Cria check-in temporário para visitantes anônimos (sem salvar no banco)
+   */
+  async createGuestCheckin(
+    user: CurrentUserPayload,
+    createDailyCheckinDto: CreateDailyCheckinDto,
+  ): Promise<any> {
+    // Validar pain state
+    const painState = await this.painStatesService.findOne(
+      createDailyCheckinDto.pain_state_id,
+    );
+    if (!painState) {
+      throw new NotFoundException('Estado de dor não encontrado');
+    }
+
+    // Buscar produtos e exercícios filtrados para visitante
+    const products = await this.productsService.findByPainStateId(
+      createDailyCheckinDto.pain_state_id,
+      user,
+    );
+
+    const exercises = await this.exercisesService.findByPainStateId(
+      createDailyCheckinDto.pain_state_id,
+      user,
+    );
+
+    // Criar estrutura de resposta similar ao check-in real
+    const today = new Date().toISOString().slice(0, 10);
+    const timestamp = Date.now();
+    const guestCheckinId = `guest-${timestamp}`;
+
+    // Formatar produtos como user_daily_plans
+    const productPlans = products.map((product, index) => ({
+      id: `guest-plan-${timestamp}-${index}`,
+      checkin_id: guestCheckinId,
+      product_id: product.id,
+      is_completed: false,
+      product: {
+        ...product,
+        category: product.category,
+        pain_state: product.pain_state,
+      },
+      exercise_prescription: null,
+    }));
+
+    // Formatar exercícios como user_daily_plans
+    const exercisePlans = exercises.map((exercise, index) => {
+      const planId = `guest-plan-${timestamp}-${products.length + index}`;
+      return {
+        id: planId,
+        checkin_id: guestCheckinId,
+        product_id: null,
+        is_completed: false,
+        product: null,
+        exercise_prescription: {
+          id: `guest-prescription-${timestamp}-${index}`,
+          plan_id: planId,
+          exercise_id: exercise.id,
+          sets: 3,
+          reps: '12 a 15',
+          rest_time: 60,
+          observations: null,
+          exercise: {
+            ...exercise,
+            category: exercise.category,
+            pain_state: exercise.pain_state,
+          },
+        },
+      };
+    });
+
+    return {
+      id: guestCheckinId,
+      user_id: null,
+      pain_state_id: createDailyCheckinDto.pain_state_id,
+      checkin_date: today,
+      pain_state: painState,
+      user_daily_plans: [...productPlans, ...exercisePlans],
+      is_guest: true, // Flag para identificar check-in temporário
+    };
+  }
+
   async create(
     user: CurrentUserPayload,
     createDailyCheckinDto: CreateDailyCheckinDto,
   ): Promise<DailyCheckin> {
-    // Visitantes anônimos não podem criar check-ins
+    // Visitantes anônimos não podem criar check-ins no banco
     if (!user.id) {
       throw new UnauthorizedException('Autenticação necessária para criar check-in');
     }

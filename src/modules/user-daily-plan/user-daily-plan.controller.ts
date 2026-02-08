@@ -25,10 +25,11 @@ export class UserDailyPlanController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar plano do dia atual do usuário' })
   @ApiResponse({ status: 200, description: 'Plano do dia retornado com sucesso' })
-  @ApiResponse({ status: 401, description: 'Autenticação necessária' })
+  @ApiResponse({ status: 200, description: 'Para visitantes anônimos, retorna array vazio (use POST /daily-checkin para gerar plano temporário)' })
   async findToday(@CurrentUser() user: CurrentUserPayload) {
+    // Visitantes anônimos não têm plano salvo no banco
     if (!user.id) {
-      throw new UnauthorizedException('Autenticação necessária');
+      return [];
     }
     return await this.userDailyPlanService.findTodayByUser(user.id);
   }

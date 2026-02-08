@@ -31,6 +31,10 @@ export class DailyCheckinsController {
     @Body() createDailyCheckinDto: CreateDailyCheckinDto,
     @CurrentUser() user: CurrentUserPayload,
   ) {
+    // Se visitante anônimo (sem id), retorna dados temporários sem salvar no banco
+    if (!user.id) {
+      return await this.dailyCheckinsService.createGuestCheckin(user, createDailyCheckinDto);
+    }
     return await this.dailyCheckinsService.create(user, createDailyCheckinDto);
   }
 

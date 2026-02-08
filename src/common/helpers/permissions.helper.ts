@@ -88,14 +88,9 @@ export class PermissionsHelper {
 
     // Visitante: apenas recursos públicos (sem restrições) ou de visitante
     if (user.role === 'visitante') {
-      // Se visitante autenticado (tem user_type_id), pode ver recursos públicos + recursos de visitante
-      if (user.user_type_id) {
-        return {
-          condition: '(user_type_id IS NULL AND plan_id IS NULL) OR (user_type_id = :userTypeId AND plan_id IS NULL)',
-          params: { userTypeId: user.user_type_id },
-        };
-      }
       // Visitante anônimo (sem token): apenas recursos públicos
+      // Visitante autenticado também vê apenas recursos públicos por enquanto
+      // (produtos específicos de visitante serão implementados quando necessário)
       return {
         condition: '(user_type_id IS NULL AND plan_id IS NULL)',
         params: {},
