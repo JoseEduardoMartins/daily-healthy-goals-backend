@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsNumber, Min } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, Min, IsIn, IsUUID, ValidateIf } from 'class-validator';
 
 export class RegisterDto {
   @IsNotEmpty({ message: 'Nome é obrigatório' })
@@ -20,4 +20,13 @@ export class RegisterDto {
   @Min(0.1, { message: 'Altura deve ser maior que zero' })
   @IsNotEmpty({ message: 'Altura é obrigatória' })
   height: number;
+
+  @IsNotEmpty({ message: 'Tipo de usuário é obrigatório' })
+  @IsIn(['visitante', 'pagante'], { message: 'Tipo de usuário deve ser "visitante" ou "pagante". Admin não pode ser cadastrado por segurança.' })
+  user_type: 'visitante' | 'pagante';
+
+  @ValidateIf((o) => o.user_type === 'pagante')
+  @IsNotEmpty({ message: 'Plano é obrigatório para usuários pagantes' })
+  @IsUUID('all', { message: 'plan_id deve ser um UUID válido' })
+  plan_id?: string | null;
 }
