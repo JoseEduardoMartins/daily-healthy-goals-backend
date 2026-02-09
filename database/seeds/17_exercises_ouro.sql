@@ -1,4 +1,5 @@
 -- Seed: Exercises for Ouro Plan
+SET NAMES utf8mb4;
 -- 15 exercícios exclusivos do plano Ouro
 
 INSERT INTO exercise (id, category_id, pain_state_id, name, description, difficulty, plan_id)

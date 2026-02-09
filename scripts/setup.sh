@@ -45,7 +45,7 @@ execute_sql_file() {
   fi
   
   echo -e "${GREEN}Executing: $description${NC}"
-  mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USERNAME" -p"$DB_PASSWORD" < "$file"
+  mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USERNAME" -p"$DB_PASSWORD" --default-character-set=utf8mb4 < "$file"
   
   if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ $description completed${NC}"

@@ -1,4 +1,5 @@
 -- Seed: Exercises for Bronze Plan
+SET NAMES utf8mb4;
 -- 7 exercícios exclusivos do plano Bronze
 -- Distribuídos entre os 3 estados de dor
 

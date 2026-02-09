@@ -1,4 +1,5 @@
 -- Seed: Products for Bronze Plan
+SET NAMES utf8mb4;
 -- 8 produtos exclusivos do plano Bronze
 -- Distribuídos entre os 3 estados de dor
 

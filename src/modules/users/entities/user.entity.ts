@@ -10,6 +10,15 @@ import {
 import { DailyCheckin } from '../../daily-checkins/entities/daily-checkin.entity';
 import { UserType } from '../../user-types/entities/user-type.entity';
 import { Plan } from '../../plans/entities/plan.entity';
+import { Subscription as SubscriptionEntity } from '../../subscriptions/entities/subscription.entity';
+
+export enum SubscriptionStatus {
+  ACTIVE = 'active',
+  CANCELED = 'canceled',
+  EXPIRED = 'expired',
+  PAST_DUE = 'past_due',
+  TRIALING = 'trialing',
+}
 
 @Entity('users')
 export class User {
@@ -40,6 +49,20 @@ export class User {
   @Column({ name: 'plan_id', nullable: true })
   plan_id: string | null;
 
+  @Column({
+    name: 'subscription_status',
+    type: 'enum',
+    enum: SubscriptionStatus,
+    nullable: true,
+  })
+  subscription_status: SubscriptionStatus | null;
+
+  @Column({ name: 'subscription_expires_at', type: 'datetime', nullable: true })
+  subscription_expires_at: Date | null;
+
+  @Column({ name: 'stripe_customer_id', nullable: true })
+  stripe_customer_id: string | null;
+
   @ManyToOne(() => UserType, (userType) => userType.users, { nullable: true })
   @JoinColumn({ name: 'user_type_id' })
   user_type: UserType | null;
@@ -50,4 +73,7 @@ export class User {
 
   @OneToMany(() => DailyCheckin, (checkin) => checkin.user)
   daily_checkins: DailyCheckin[];
+
+  @OneToMany(() => SubscriptionEntity, (subscription) => subscription.user)
+  subscriptions: SubscriptionEntity[];
 }

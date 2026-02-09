@@ -1,4 +1,5 @@
 -- Seed: Categories
+SET NAMES utf8mb4;
 -- Categorias de produtos (diet) e exercícios (exercise)
 -- MySQL 8.0+ suporta UUID() nativamente
 

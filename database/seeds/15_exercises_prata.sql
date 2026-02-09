@@ -1,4 +1,5 @@
 -- Seed: Exercises for Prata Plan
+SET NAMES utf8mb4;
 -- 15 exercícios exclusivos do plano Prata
 
 INSERT INTO exercise (id, category_id, pain_state_id, name, description, difficulty, plan_id)

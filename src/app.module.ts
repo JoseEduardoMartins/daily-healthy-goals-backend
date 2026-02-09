@@ -14,16 +14,18 @@ import { ProductIngredientsModule } from './modules/product-ingredients/product-
 import { ExercisePrescriptionsModule } from './modules/exercise-prescriptions/exercise-prescriptions.module';
 import { UserTypesModule } from './modules/user-types/user-types.module';
 import { PlansModule } from './modules/plans/plans.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 import jwtConfig from './config/jwt.config';
 import mailConfig from './config/mail.config';
+import stripeConfig from './config/stripe.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, jwtConfig, mailConfig],
+      load: [appConfig, databaseConfig, jwtConfig, mailConfig, stripeConfig],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -43,6 +45,7 @@ import mailConfig from './config/mail.config';
     ExercisePrescriptionsModule,
     UserTypesModule,
     PlansModule,
+    SubscriptionsModule,
   ],
 })
 export class AppModule {}

@@ -1,4 +1,5 @@
 -- Seed: Pain States
+SET NAMES utf8mb4;
 -- Estados de dor/humor do sistema
 -- MySQL 8.0+ suporta UUID() nativamente
 

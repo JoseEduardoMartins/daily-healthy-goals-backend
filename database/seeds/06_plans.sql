@@ -1,5 +1,8 @@
 -- Seed: Plans
 -- Planos do sistema
+-- IMPORTANTE: Execute este arquivo com charset UTF-8: mysql --default-character-set=utf8mb4
+
+SET NAMES utf8mb4;
 
 -- Plano Bronze
 INSERT INTO plans (id, name, level, description, price, is_active)

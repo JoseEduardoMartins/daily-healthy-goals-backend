@@ -1,4 +1,5 @@
 -- Seed: User Types
+SET NAMES utf8mb4;
 -- Tipos de usuário do sistema
 
 INSERT INTO user_types (id, name, description)

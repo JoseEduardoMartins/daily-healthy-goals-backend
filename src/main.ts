@@ -4,7 +4,9 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true, // Necessário para webhooks do Stripe
+  });
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -17,6 +19,12 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors();
+
+  // Configurar charset UTF-8 para todas as respostas
+  app.use((req, res, next) => {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    next();
+  });
 
   // Swagger configuration
   const config = new DocumentBuilder()
@@ -33,6 +41,7 @@ async function bootstrap() {
     .addTag('daily-goals', 'Metas diárias do usuário')
     .addTag('user-types', 'Tipos de usuário')
     .addTag('plans', 'Planos de assinatura')
+    .addTag('subscriptions', 'Assinaturas e pagamentos')
     .addTag('users', 'Gerenciamento de usuários')
     .addBearerAuth()
     .build();

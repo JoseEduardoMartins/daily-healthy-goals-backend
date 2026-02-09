@@ -1,6 +1,9 @@
 -- Seed: Products for Visitante (Públicos)
 -- 8 produtos públicos (acessíveis por todos)
 -- Distribuídos entre os 3 estados de dor
+-- IMPORTANTE: Execute este arquivo com charset UTF-8: mysql --default-character-set=utf8mb4
+
+SET NAMES utf8mb4;
 
 -- ============================================
 -- PRODUTOS PÚBLICOS - COM DOR (3 produtos)

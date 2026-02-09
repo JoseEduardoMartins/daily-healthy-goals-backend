@@ -1,6 +1,9 @@
 -- Seed: Exercises for Visitante (Públicos)
 -- 7 exercícios públicos (acessíveis por todos)
 -- Distribuídos entre os 3 estados de dor
+-- IMPORTANTE: Execute este arquivo com charset UTF-8: mysql --default-character-set=utf8mb4
+
+SET NAMES utf8mb4;
 
 -- ============================================
 -- EXERCÍCIOS PÚBLICOS - COM DOR (3 exercícios)

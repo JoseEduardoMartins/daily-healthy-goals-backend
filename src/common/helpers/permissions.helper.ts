@@ -51,23 +51,41 @@ export class PermissionsHelper {
     // Pagante pode acessar:
     // 1. Recursos públicos (sem restrições)
     // 2. Recursos do seu plano ou de planos inferiores (hierarquia)
+    // MAS: precisa ter assinatura ativa
     if (user.role === 'pagante') {
+      // Verificar se assinatura está ativa
+      if (
+        user.subscription_status !== 'active' &&
+        user.subscription_status !== 'trialing'
+      ) {
+        // Assinatura não está ativa - tratar como visitante
+        return !resourceUserTypeId && !resourcePlanId;
+      }
+
+      // Verificar se assinatura não expirou
+      if (
+        user.subscription_expires_at &&
+        user.subscription_expires_at < new Date()
+      ) {
+        // Assinatura expirada - tratar como visitante
+        return !resourceUserTypeId && !resourcePlanId;
+      }
+
       // Recursos públicos
       if (!resourceUserTypeId && !resourcePlanId) {
         return true;
       }
 
       // Se tem plan_id, precisa verificar hierarquia
-      // Mas como não temos o plan_level do usuário aqui, vamos usar a query SQL
-      // Por enquanto, retorna true se for do mesmo plano (será filtrado na query)
       if (resourcePlanId) {
         // Se o usuário tem o mesmo plan_id, pode acessar
         if (user.plan_id === resourcePlanId) {
           return true;
         }
         // Se temos o plan_level do recurso, podemos comparar hierarquia
-        // Mas precisamos do plan_level do usuário também
-        // Por enquanto, vamos confiar na query SQL para fazer essa verificação
+        if (resourcePlanLevel && user.plan_level) {
+          return this.canAccessPlanLevel(user.plan_level, resourcePlanLevel);
+        }
         return false;
       }
 
@@ -103,7 +121,24 @@ export class PermissionsHelper {
       }
 
       // Pagante: recursos públicos + recursos do seu plano ou inferiores
+      // MAS: precisa ter assinatura ativa
       if (user.role === 'pagante') {
+        // Verificar se assinatura está ativa
+        if (
+          user.subscription_status !== 'active' &&
+          user.subscription_status !== 'trialing'
+        ) {
+          return false; // Assinatura não ativa - apenas recursos públicos (já filtrados acima)
+        }
+
+        // Verificar se assinatura não expirou
+        if (
+          user.subscription_expires_at &&
+          user.subscription_expires_at < new Date()
+        ) {
+          return false; // Assinatura expirada - apenas recursos públicos
+        }
+
         // Se o recurso tem plan_id e plan_level, verifica hierarquia
         if (resource.plan_id && resource.plan_level && user.plan_level) {
           return this.canAccessPlanLevel(user.plan_level, resource.plan_level);

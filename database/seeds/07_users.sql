@@ -1,10 +1,11 @@
 -- Seed: Users
+SET NAMES utf8mb4;
 -- Usuários iniciais do sistema para testes
 
 -- Usuário Admin
 -- Email: admin@dailyhealthygoals.com
 -- Senha: admin123
-INSERT INTO users (id, name, email, password, weight, height, user_type_id, plan_id)
+INSERT INTO users (id, name, email, password, weight, height, user_type_id, plan_id, subscription_status, subscription_expires_at, stripe_customer_id)
 SELECT 
   UUID(),
   'Administrador',
@@ -13,13 +14,16 @@ SELECT
   75.0,
   1.75,
   (SELECT id FROM user_types WHERE name = 'admin' LIMIT 1),
+  NULL,
+  NULL,
+  NULL,
   NULL
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'admin@dailyhealthygoals.com');
 
 -- Usuário Visitante
 -- Email: visitante@dailyhealthygoals.com
 -- Senha: visitante123
-INSERT INTO users (id, name, email, password, weight, height, user_type_id, plan_id)
+INSERT INTO users (id, name, email, password, weight, height, user_type_id, plan_id, subscription_status, subscription_expires_at, stripe_customer_id)
 SELECT 
   UUID(),
   'Usuário Visitante',
@@ -28,13 +32,16 @@ SELECT
   70.0,
   1.70,
   (SELECT id FROM user_types WHERE name = 'visitante' LIMIT 1),
+  NULL,
+  NULL,
+  NULL,
   NULL
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'visitante@dailyhealthygoals.com');
 
 -- Usuário Plano Bronze
 -- Email: bronze@dailyhealthygoals.com
 -- Senha: bronze123
-INSERT INTO users (id, name, email, password, weight, height, user_type_id, plan_id)
+INSERT INTO users (id, name, email, password, weight, height, user_type_id, plan_id, subscription_status, subscription_expires_at, stripe_customer_id)
 SELECT 
   UUID(),
   'Usuário Bronze',
@@ -43,13 +50,16 @@ SELECT
   72.0,
   1.72,
   (SELECT id FROM user_types WHERE name = 'pagante' LIMIT 1),
-  (SELECT id FROM plans WHERE level = 'bronze' LIMIT 1)
+  (SELECT id FROM plans WHERE level = 'bronze' LIMIT 1),
+  'trialing',
+  DATE_ADD(NOW(), INTERVAL 1 MONTH),
+  NULL
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'bronze@dailyhealthygoals.com');
 
 -- Usuário Plano Prata
 -- Email: prata@dailyhealthygoals.com
 -- Senha: prata123
-INSERT INTO users (id, name, email, password, weight, height, user_type_id, plan_id)
+INSERT INTO users (id, name, email, password, weight, height, user_type_id, plan_id, subscription_status, subscription_expires_at, stripe_customer_id)
 SELECT 
   UUID(),
   'Usuário Prata',
@@ -58,13 +68,16 @@ SELECT
   73.0,
   1.73,
   (SELECT id FROM user_types WHERE name = 'pagante' LIMIT 1),
-  (SELECT id FROM plans WHERE level = 'prata' LIMIT 1)
+  (SELECT id FROM plans WHERE level = 'prata' LIMIT 1),
+  'trialing',
+  DATE_ADD(NOW(), INTERVAL 1 MONTH),
+  NULL
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'prata@dailyhealthygoals.com');
 
 -- Usuário Plano Ouro
 -- Email: ouro@dailyhealthygoals.com
 -- Senha: ouro123
-INSERT INTO users (id, name, email, password, weight, height, user_type_id, plan_id)
+INSERT INTO users (id, name, email, password, weight, height, user_type_id, plan_id, subscription_status, subscription_expires_at, stripe_customer_id)
 SELECT 
   UUID(),
   'Usuário Ouro',
@@ -73,5 +86,8 @@ SELECT
   74.0,
   1.74,
   (SELECT id FROM user_types WHERE name = 'pagante' LIMIT 1),
-  (SELECT id FROM plans WHERE level = 'ouro' LIMIT 1)
+  (SELECT id FROM plans WHERE level = 'ouro' LIMIT 1),
+  'trialing',
+  DATE_ADD(NOW(), INTERVAL 1 MONTH),
+  NULL
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'ouro@dailyhealthygoals.com');

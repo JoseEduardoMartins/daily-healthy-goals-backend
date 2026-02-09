@@ -1,4 +1,5 @@
 -- Seed: Products for Prata Plan
+SET NAMES utf8mb4;
 -- 15 produtos exclusivos do plano Prata
 
 INSERT INTO products (id, category_id, pain_state_id, name, description, moment_of_day, benefits, recipe_prep, plan_id)
