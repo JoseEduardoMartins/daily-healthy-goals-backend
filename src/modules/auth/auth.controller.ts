@@ -1,8 +1,11 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from '../../common/dtos/auth/register.dto';
 import { LoginDto } from '../../common/dtos/auth/login.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { CurrentUserPayload } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -27,5 +30,19 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Credenciais inválidas' })
   async login(@Body() loginDto: LoginDto) {
     return await this.authService.login(loginDto);
+  }
+
+  @Post('refresh')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Atualizar token JWT com dados atualizados do usuário' })
+  @ApiResponse({ status: 200, description: 'Token atualizado com sucesso' })
+  @ApiResponse({ status: 401, description: 'Token inválido ou expirado' })
+  async refreshToken(@CurrentUser() user: CurrentUserPayload) {
+    if (!user.id) {
+      throw new UnauthorizedException('Usuário não identificado');
+    }
+    return await this.authService.refreshToken(user.id);
   }
 }

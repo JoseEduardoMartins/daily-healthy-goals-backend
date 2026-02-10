@@ -3,6 +3,7 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -14,6 +15,8 @@ import { PlansService } from '../plans/plans.service';
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
@@ -144,11 +147,19 @@ export class UsersService {
     subscriptionStatus: SubscriptionStatus,
     subscriptionExpiresAt: Date,
   ): Promise<void> {
+    this.logger.log(
+      `🔄 updateSubscription chamado: userId=${userId}, planId=${planId}, status=${subscriptionStatus}, expiresAt=${subscriptionExpiresAt.toISOString()}`,
+    );
+
     // Buscar tipo pagante para atualizar o user_type_id
     const payingUserType = await this.userTypesService.findByName('pagante');
     if (!payingUserType) {
       throw new NotFoundException('Tipo de usuário "pagante" não encontrado');
     }
+
+    this.logger.log(
+      `📝 Atualizando usuário ${userId}: user_type_id=${payingUserType.id}, plan_id=${planId}, subscription_status=${subscriptionStatus}`,
+    );
 
     await this.usersRepository.update(userId, {
       user_type_id: payingUserType.id,
@@ -156,6 +167,8 @@ export class UsersService {
       subscription_status: subscriptionStatus,
       subscription_expires_at: subscriptionExpiresAt,
     });
+
+    this.logger.log(`✅ Usuário ${userId} atualizado com sucesso no banco de dados`);
   }
 
   async updateSubscriptionStatus(

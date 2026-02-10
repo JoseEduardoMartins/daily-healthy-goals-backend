@@ -68,6 +68,18 @@ export class AuthService {
     return this.generateTokenResponse(user);
   }
 
+  async refreshToken(userId: string): Promise<AuthResponse> {
+    // Buscar usuário atualizado do banco
+    const user = await this.usersService.findOne(userId);
+    
+    if (!user) {
+      throw new UnauthorizedException('Usuário não encontrado');
+    }
+
+    // Gerar novo token com dados atualizados
+    return this.generateTokenResponse(user);
+  }
+
   private async generateTokenResponse(user: User): Promise<AuthResponse> {
     const role = user.user_type?.name || 'visitante';
     

@@ -226,14 +226,21 @@ export class SubscriptionsService {
     }
 
     subscription = await this.subscriptionsRepository.save(subscription);
+    this.logger.log(
+      `✅ Subscription salva no banco: ID=${subscription.id}, Status=${subscription.status}, User=${userId}, Plan=${planId}`,
+    );
 
     // Atualizar usuário
+    this.logger.log(
+      `🔄 Atualizando usuário ${userId} para pagante com plano ${planId}, status=${subscription.status}`,
+    );
     await this.usersService.updateSubscription(
       userId,
       planId,
       subscription.status,
       subscription.current_period_end,
     );
+    this.logger.log(`✅ Usuário ${userId} atualizado com sucesso para pagante`);
 
     return subscription;
   }
