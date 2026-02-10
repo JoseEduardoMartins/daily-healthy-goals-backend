@@ -1,20 +1,22 @@
 import {
-  Injectable,
-  NotFoundException,
   BadRequestException,
   ConflictException,
+  Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Subscription as SubscriptionEntity, SubscriptionStatus } from './entities/subscription.entity';
-import { PaymentHistory, PaymentStatus } from './entities/payment-history.entity';
-import { UsersService } from '../users/users.service';
-import { PlansService } from '../plans/plans.service';
-import { StripeService } from './services/stripe.service';
-import { CreateCheckoutDto } from '../../common/dtos/subscriptions/create-checkout.dto';
-import { UpgradePlanDto } from '../../common/dtos/subscriptions/upgrade-plan.dto';
 import Stripe from 'stripe';
+import { Repository } from 'typeorm';
+import { CreateCheckoutDto } from '../../common/dtos/subscriptions/create-checkout.dto';
+import { PlansService } from '../plans/plans.service';
+import { UsersService } from '../users/users.service';
+import { PaymentHistory, PaymentStatus } from './entities/payment-history.entity';
+import {
+  Subscription as SubscriptionEntity,
+  SubscriptionStatus,
+} from './entities/subscription.entity';
+import { StripeService } from './services/stripe.service';
 
 @Injectable()
 export class SubscriptionsService {
@@ -91,7 +93,9 @@ export class SubscriptionsService {
     });
   }
 
-  async findByStripeSubscriptionId(stripeSubscriptionId: string): Promise<SubscriptionEntity | null> {
+  async findByStripeSubscriptionId(
+    stripeSubscriptionId: string,
+  ): Promise<SubscriptionEntity | null> {
     return await this.subscriptionsRepository.findOne({
       where: { stripe_subscription_id: stripeSubscriptionId },
       relations: ['user', 'plan'],
@@ -126,7 +130,9 @@ export class SubscriptionsService {
     };
   }
 
-  async handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<SubscriptionEntity | null> {
+  async handleCheckoutCompleted(
+    session: Stripe.Checkout.Session,
+  ): Promise<SubscriptionEntity | null> {
     const userId = session.metadata?.userId;
     const planId = session.metadata?.planId;
 
@@ -218,18 +224,19 @@ export class SubscriptionsService {
     } else if (invoiceData.subscription && typeof invoiceData.subscription === 'object') {
       subscriptionId = invoiceData.subscription.id || null;
     }
-    
+
     if (!subscriptionId) {
       return;
     }
 
-    const subscription: SubscriptionEntity | null = await this.findByStripeSubscriptionId(subscriptionId);
+    const subscription: SubscriptionEntity | null =
+      await this.findByStripeSubscriptionId(subscriptionId);
     if (!subscription) {
       return;
     }
 
     // Atualizar subscription
-    const stripeSub = await this.stripeService.retrieveSubscription(subscriptionId) as any;
+    const stripeSub = (await this.stripeService.retrieveSubscription(subscriptionId)) as any;
     const dbSub = subscription as SubscriptionEntity;
     dbSub.status = this.mapStripeStatusToSubscriptionStatus(stripeSub.status);
     dbSub.current_period_start = new Date(stripeSub.current_period_start * 1000);
@@ -264,12 +271,13 @@ export class SubscriptionsService {
     } else if (invoiceData.subscription && typeof invoiceData.subscription === 'object') {
       subscriptionId = invoiceData.subscription.id || null;
     }
-    
+
     if (!subscriptionId) {
       return;
     }
 
-    const subscription: SubscriptionEntity | null = await this.findByStripeSubscriptionId(subscriptionId);
+    const subscription: SubscriptionEntity | null =
+      await this.findByStripeSubscriptionId(subscriptionId);
     if (!subscription) {
       return;
     }
@@ -295,7 +303,9 @@ export class SubscriptionsService {
   }
 
   async handleSubscriptionDeleted(stripeSubscription: Stripe.Subscription) {
-    const subscription: SubscriptionEntity | null = await this.findByStripeSubscriptionId(stripeSubscription.id);
+    const subscription: SubscriptionEntity | null = await this.findByStripeSubscriptionId(
+      stripeSubscription.id,
+    );
     if (!subscription) {
       return;
     }
@@ -309,7 +319,9 @@ export class SubscriptionsService {
   }
 
   async handleSubscriptionUpdated(stripeSubscription: Stripe.Subscription) {
-    const subscription: SubscriptionEntity | null = await this.findByStripeSubscriptionId(stripeSubscription.id);
+    const subscription: SubscriptionEntity | null = await this.findByStripeSubscriptionId(
+      stripeSubscription.id,
+    );
     if (!subscription) {
       return;
     }

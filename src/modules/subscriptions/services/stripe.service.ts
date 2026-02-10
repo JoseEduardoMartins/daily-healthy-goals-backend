@@ -10,7 +10,7 @@ export class StripeService implements OnModuleInit {
 
   constructor(private configService: ConfigService) {
     const secretKey = this.configService.get<string>('stripe.secretKey');
-    
+
     // Se não tiver chave, cria instância vazia (para desenvolvimento)
     if (secretKey) {
       this.stripe = new Stripe(secretKey, {
@@ -22,13 +22,16 @@ export class StripeService implements OnModuleInit {
     }
 
     this.currency = this.configService.get<string>('stripe.currency') || 'brl';
-    this.frontendUrl = this.configService.get<string>('stripe.frontendUrl') || 'http://localhost:5173';
+    this.frontendUrl =
+      this.configService.get<string>('stripe.frontendUrl') || 'http://localhost:5173';
   }
 
   onModuleInit() {
     // Verificar se a chave está configurada
     if (!this.configService.get<string>('stripe.secretKey')) {
-      console.warn('⚠️  STRIPE_SECRET_KEY não configurada. Funcionalidades de pagamento não estarão disponíveis.');
+      console.warn(
+        '⚠️  STRIPE_SECRET_KEY não configurada. Funcionalidades de pagamento não estarão disponíveis.',
+      );
     }
   }
 
@@ -39,7 +42,11 @@ export class StripeService implements OnModuleInit {
     return this.stripe;
   }
 
-  async createCustomer(email: string, name: string, metadata?: Record<string, string>): Promise<Stripe.Customer> {
+  async createCustomer(
+    email: string,
+    name: string,
+    metadata?: Record<string, string>,
+  ): Promise<Stripe.Customer> {
     return await this.stripe.customers.create({
       email,
       name,
@@ -74,7 +81,7 @@ export class StripeService implements OnModuleInit {
         },
       ],
       mode: 'subscription',
-      success_url: `${this.frontendUrl}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.BACKEND_URL || 'http://localhost:3000'}/subscriptions/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${this.frontendUrl}/profile`,
       metadata,
     });
@@ -84,15 +91,21 @@ export class StripeService implements OnModuleInit {
     return await this.stripe.subscriptions.retrieve(subscriptionId);
   }
 
-  async cancelSubscription(subscriptionId: string, cancelAtPeriodEnd = true): Promise<Stripe.Subscription> {
+  async cancelSubscription(
+    subscriptionId: string,
+    cancelAtPeriodEnd = true,
+  ): Promise<Stripe.Subscription> {
     return await this.stripe.subscriptions.update(subscriptionId, {
       cancel_at_period_end: cancelAtPeriodEnd,
     });
   }
 
-  async updateSubscription(subscriptionId: string, newPlanPriceId: string): Promise<Stripe.Subscription> {
+  async updateSubscription(
+    subscriptionId: string,
+    newPlanPriceId: string,
+  ): Promise<Stripe.Subscription> {
     const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
-    
+
     return await this.stripe.subscriptions.update(subscriptionId, {
       items: [
         {

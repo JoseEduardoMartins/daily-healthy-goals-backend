@@ -1,24 +1,34 @@
 import {
-  Controller,
-  Post,
-  Get,
   Body,
-  UseGuards,
+  Controller,
+  Get,
+  Headers,
   HttpCode,
   HttpStatus,
+  Logger,
+  Post,
+  Query,
   RawBodyRequest,
   Req,
-  Headers,
-  Logger,
+  Res,
+  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
-import { Request } from 'express';
-import { SubscriptionsService } from './subscriptions.service';
-import { StripeService } from './services/stripe.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Request, Response } from 'express';
+import Stripe from 'stripe';
 import { CurrentUser, CurrentUserPayload } from '../../common/decorators/current-user.decorator';
 import { CreateCheckoutDto } from '../../common/dtos/subscriptions/create-checkout.dto';
-import Stripe from 'stripe';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { StripeService } from './services/stripe.service';
+import { SubscriptionsService } from './subscriptions.service';
 
 @ApiTags('subscriptions')
 @Controller('subscriptions')
@@ -43,8 +53,10 @@ export class SubscriptionsController {
     @CurrentUser() user: CurrentUserPayload,
     @Body() createCheckoutDto: CreateCheckoutDto,
   ) {
-    if (!user.id) {
-      throw new Error('Usuário não autenticado');
+    if (!user || !user.id) {
+      throw new UnauthorizedException(
+        'Usuário não autenticado. Token JWT inválido ou não fornecido.',
+      );
     }
 
     return await this.subscriptionsService.createCheckoutSession(user.id, createCheckoutDto);
@@ -56,8 +68,10 @@ export class SubscriptionsController {
   @ApiOperation({ summary: 'Obter status da assinatura do usuário' })
   @ApiResponse({ status: 200, description: 'Status da assinatura' })
   async getStatus(@CurrentUser() user: CurrentUserPayload) {
-    if (!user.id) {
-      throw new Error('Usuário não autenticado');
+    if (!user || !user.id) {
+      throw new UnauthorizedException(
+        'Usuário não autenticado. Token JWT inválido ou não fornecido.',
+      );
     }
 
     return await this.subscriptionsService.getSubscriptionStatus(user.id);
@@ -71,11 +85,62 @@ export class SubscriptionsController {
   @ApiResponse({ status: 200, description: 'Assinatura cancelada com sucesso' })
   @ApiResponse({ status: 404, description: 'Assinatura não encontrada' })
   async cancel(@CurrentUser() user: CurrentUserPayload) {
-    if (!user.id) {
-      throw new Error('Usuário não autenticado');
+    if (!user || !user.id) {
+      throw new UnauthorizedException(
+        'Usuário não autenticado. Token JWT inválido ou não fornecido.',
+      );
     }
 
     return await this.subscriptionsService.cancelSubscription(user.id);
+  }
+
+  @Get('success')
+  @ApiOperation({ summary: 'Confirmar pagamento após checkout do Stripe' })
+  @ApiQuery({ name: 'session_id', description: 'ID da sessão de checkout do Stripe' })
+  @ApiResponse({ status: 302, description: 'Redireciona para /profile no frontend' })
+  async confirmPayment(@Query('session_id') sessionId: string, @Res() res: Response) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+    if (!sessionId) {
+      // Se não tiver session_id, redireciona para perfil com erro
+      return res.redirect(`${frontendUrl}/profile?payment_error=missing_session`);
+    }
+
+    try {
+      // Buscar a sessão no Stripe para validar
+      const session = await this.stripeService.getStripe().checkout.sessions.retrieve(sessionId);
+
+      // Verificar se o pagamento foi bem-sucedido
+      if (session.payment_status === 'paid' && session.status === 'complete') {
+        // Verificar se a subscription já foi processada pelo webhook
+        const subscription = await this.subscriptionsService.findByStripeSubscriptionId(
+          session.subscription as string,
+        );
+
+        if (subscription) {
+          // Pagamento confirmado e processado - redireciona para perfil com sucesso
+          return res.redirect(
+            `${frontendUrl}/profile?payment_success=true&session_id=${sessionId}`,
+          );
+        } else {
+          // Pagamento confirmado mas ainda processando (webhook pode estar em andamento)
+          // Aguardar alguns segundos e redirecionar para perfil (frontend pode fazer polling)
+          return res.redirect(
+            `${frontendUrl}/profile?payment_processing=true&session_id=${sessionId}`,
+          );
+        }
+      } else {
+        // Pagamento não foi concluído - redireciona para perfil com erro
+        return res.redirect(
+          `${frontendUrl}/profile?payment_error=not_completed&session_id=${sessionId}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Erro ao confirmar pagamento: ${error.message}`);
+      return res.redirect(
+        `${frontendUrl}/profile?payment_error=validation_failed&session_id=${sessionId}`,
+      );
+    }
   }
 
   @Post('webhook')
@@ -87,7 +152,7 @@ export class SubscriptionsController {
     @Headers('stripe-signature') signature: string,
   ) {
     console.log('🔔 Webhook recebido do Stripe');
-    
+
     const payload = req.rawBody;
     if (!payload) {
       console.error('❌ Payload vazio');
@@ -120,7 +185,9 @@ export class SubscriptionsController {
           if (result) {
             this.logger.log('✅ checkout.session.completed processado com sucesso');
           } else {
-            this.logger.warn('⚠️ checkout.session.completed ignorado (evento de teste sem metadata)');
+            this.logger.warn(
+              '⚠️ checkout.session.completed ignorado (evento de teste sem metadata)',
+            );
           }
         } catch (error) {
           this.logger.error(`❌ Erro ao processar checkout.session.completed: ${error.message}`);
@@ -130,25 +197,19 @@ export class SubscriptionsController {
 
       case 'invoice.payment_succeeded':
         console.log('💳 Processando invoice.payment_succeeded');
-        await this.subscriptionsService.handlePaymentSucceeded(
-          event.data.object as Stripe.Invoice,
-        );
+        await this.subscriptionsService.handlePaymentSucceeded(event.data.object as Stripe.Invoice);
         console.log('✅ invoice.payment_succeeded processado com sucesso');
         break;
 
       case 'invoice_payment.paid': // Versão mais recente da API (2026-01-28.clover)
         console.log('💳 Processando invoice_payment.paid');
-        await this.subscriptionsService.handlePaymentSucceeded(
-          event.data.object as Stripe.Invoice,
-        );
+        await this.subscriptionsService.handlePaymentSucceeded(event.data.object as Stripe.Invoice);
         console.log('✅ invoice_payment.paid processado com sucesso');
         break;
 
       case 'invoice.payment_failed':
         console.log('⚠️ Processando pagamento falhado');
-        await this.subscriptionsService.handlePaymentFailed(
-          event.data.object as Stripe.Invoice,
-        );
+        await this.subscriptionsService.handlePaymentFailed(event.data.object as Stripe.Invoice);
         console.log('✅ Falha de pagamento processada');
         break;
 
