@@ -113,7 +113,7 @@ export class SubscriptionsController {
       // Verificar se o pagamento foi bem-sucedido
       if (session.payment_status === 'paid' && session.status === 'complete') {
         // Verificar se a subscription já foi processada pelo webhook
-        const subscription = await this.subscriptionsService.findByStripeSubscriptionId(
+        let subscription = await this.subscriptionsService.findByStripeSubscriptionId(
           session.subscription as string,
         );
 
@@ -123,11 +123,40 @@ export class SubscriptionsController {
             `${frontendUrl}/profile?payment_success=true&session_id=${sessionId}`,
           );
         } else {
-          // Pagamento confirmado mas ainda processando (webhook pode estar em andamento)
-          // Aguardar alguns segundos e redirecionar para perfil (frontend pode fazer polling)
-          return res.redirect(
-            `${frontendUrl}/profile?payment_processing=true&session_id=${sessionId}`,
+          // Webhook ainda não processou - tentar processar manualmente
+          this.logger.log(
+            `⚠️ Subscription ainda não processada pelo webhook. Tentando processar manualmente para session: ${sessionId}`,
           );
+
+          try {
+            // Tentar processar a subscription manualmente
+            subscription = await this.subscriptionsService.handleCheckoutCompleted(session);
+
+            if (subscription) {
+              this.logger.log(
+                `✅ Subscription processada manualmente com sucesso para session: ${sessionId}`,
+              );
+              // Pagamento confirmado e processado - redireciona para perfil com sucesso
+              return res.redirect(
+                `${frontendUrl}/profile?payment_success=true&session_id=${sessionId}`,
+              );
+            } else {
+              // Não foi possível processar (falta metadata ou outros dados)
+              this.logger.warn(
+                `⚠️ Não foi possível processar subscription manualmente para session: ${sessionId}. Webhook deve processar em breve.`,
+              );
+              // Redirecionar para perfil com status de processamento
+              return res.redirect(
+                `${frontendUrl}/profile?payment_processing=true&session_id=${sessionId}`,
+              );
+            }
+          } catch (error) {
+            this.logger.error(`❌ Erro ao processar subscription manualmente: ${error.message}`);
+            // Em caso de erro, redirecionar para processamento (webhook pode processar depois)
+            return res.redirect(
+              `${frontendUrl}/profile?payment_processing=true&session_id=${sessionId}`,
+            );
+          }
         }
       } else {
         // Pagamento não foi concluído - redireciona para perfil com erro

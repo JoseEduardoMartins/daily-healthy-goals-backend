@@ -170,10 +170,35 @@ export class SubscriptionsService {
 
     // Buscar subscription do Stripe
     const stripeSubscription = await this.stripeService.retrieveSubscription(subscriptionId);
+    const stripeSub = stripeSubscription as any;
+
+    // Se os campos não estiverem disponíveis, usar valores padrão temporários
+    // O webhook atualizará com os valores corretos depois
+    let currentPeriodStart: Date;
+    let currentPeriodEnd: Date;
+
+    if (stripeSub.current_period_start && stripeSub.current_period_end) {
+      // Campos disponíveis, usar valores do Stripe
+      currentPeriodStart = new Date(stripeSub.current_period_start * 1000);
+      currentPeriodEnd = new Date(stripeSub.current_period_end * 1000);
+    } else {
+      // Campos não disponíveis, usar valores padrão temporários
+      this.logger.warn(
+        `⚠️ Subscription do Stripe não tem current_period_start ou current_period_end. Usando valores padrão temporários. Subscription ID: ${subscriptionId}`,
+      );
+      // Usar data atual como início e adicionar 30 dias como fim (será atualizado pelo webhook)
+      currentPeriodStart = new Date();
+      currentPeriodEnd = new Date();
+      currentPeriodEnd.setDate(currentPeriodEnd.getDate() + 30);
+      this.logger.log(
+        `📅 Usando período temporário: ${currentPeriodStart.toISOString()} até ${currentPeriodEnd.toISOString()}`,
+      );
+    }
 
     // Criar ou atualizar subscription no banco
-    const user = await this.usersService.findOne(userId);
-    const plan = await this.plansService.findOne(planId);
+    // Validar que user e plan existem (findOne lança exceção se não encontrar)
+    await this.usersService.findOne(userId);
+    await this.plansService.findOne(planId);
 
     let subscription: SubscriptionEntity | null = await this.subscriptionsRepository.findOne({
       where: { stripe_subscription_id: subscriptionId },
@@ -182,22 +207,20 @@ export class SubscriptionsService {
     if (subscription) {
       // Atualizar subscription existente
       const dbSub = subscription as SubscriptionEntity;
-      const stripeSub = stripeSubscription as any;
       dbSub.status = this.mapStripeStatusToSubscriptionStatus(stripeSub.status);
-      dbSub.current_period_start = new Date(stripeSub.current_period_start * 1000);
-      dbSub.current_period_end = new Date(stripeSub.current_period_end * 1000);
+      dbSub.current_period_start = currentPeriodStart;
+      dbSub.current_period_end = currentPeriodEnd;
       dbSub.cancel_at_period_end = stripeSub.cancel_at_period_end || false;
     } else {
       // Criar nova subscription
-      const stripeSub = stripeSubscription as any;
       subscription = this.subscriptionsRepository.create({
         user_id: userId,
         plan_id: planId,
         stripe_subscription_id: subscriptionId,
         stripe_customer_id: stripeSub.customer as string,
         status: this.mapStripeStatusToSubscriptionStatus(stripeSub.status),
-        current_period_start: new Date(stripeSub.current_period_start * 1000),
-        current_period_end: new Date(stripeSub.current_period_end * 1000),
+        current_period_start: currentPeriodStart,
+        current_period_end: currentPeriodEnd,
         cancel_at_period_end: stripeSub.cancel_at_period_end || false,
       });
     }

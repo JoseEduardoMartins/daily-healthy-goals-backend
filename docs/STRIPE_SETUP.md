@@ -6,10 +6,11 @@ Adicione as seguintes variáveis de ambiente ao seu arquivo `.env`:
 
 ```env
 # Stripe Configuration
-STRIPE_SECRET_KEY=sk_test_...  # Chave secreta do Stripe (Test ou Live)
-STRIPE_WEBHOOK_SECRET=whsec_...  # Secret do webhook (obtido no dashboard do Stripe)
-STRIPE_CURRENCY=brl  # Moeda (brl, usd, etc.)
-FRONTEND_URL=http://localhost:5173  # URL do frontend para redirecionamento após pagamento
+STRIPE_SECRET_KEY=sk_test_...        # Chave secreta do Stripe (Test ou Live)
+STRIPE_WEBHOOK_SECRET=whsec_...      # Secret do webhook (obtido no dashboard do Stripe)
+STRIPE_CURRENCY=brl                  # Moeda (brl, usd, etc.)
+BACKEND_URL=http://localhost:3000    # URL pública do backend (usada no success_url do Stripe)
+FRONTEND_URL=http://localhost:5173   # URL do frontend (usada para redirecionar para /profile)
 ```
 
 ## 🔑 Como Obter as Chaves
@@ -83,6 +84,7 @@ JWT_EXPIRES_IN=7d
 STRIPE_SECRET_KEY=sk_test_51AbCdEfGhIjKlMnOpQrStUvWxYz1234567890
 STRIPE_WEBHOOK_SECRET=whsec_1234567890abcdefghijklmnopqrstuvwxyz
 STRIPE_CURRENCY=brl
+BACKEND_URL=http://localhost:3000
 FRONTEND_URL=http://localhost:5173
 ```
 

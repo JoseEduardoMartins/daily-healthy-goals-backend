@@ -20,8 +20,10 @@ O sistema de pagamento funciona da seguinte forma:
 1. **Usuário seleciona um plano** → Frontend lista planos disponíveis
 2. **Frontend cria sessão de checkout** → Backend retorna URL do Stripe
 3. **Usuário é redirecionado para Stripe** → Completa o pagamento
-4. **Stripe redireciona de volta** → Frontend verifica status da assinatura
-5. **Webhooks atualizam o backend** → Status é sincronizado automaticamente
+4. **Stripe redireciona de volta para o backend** → `GET /subscriptions/success?session_id=...`
+5. **Backend valida o pagamento** → Redireciona o usuário para `/profile` no frontend com parâmetros de status
+6. **Frontend atualiza a UI em `/profile`** → Lê parâmetros de query e busca dados atualizados (`/subscriptions/status` ou login)
+7. **Webhooks do Stripe** continuam existindo como mecanismo adicional de segurança/sincronização
 
 ---
 
@@ -336,98 +338,25 @@ function PlansPage() {
 
 ---
 
-### 2. Página de Sucesso (Após Checkout)
+### 2. Comportamento após Checkout (Redirecionamento para `/profile`)
 
-Após o usuário completar o pagamento no Stripe, ele será redirecionado para:
-```
-http://localhost:5173/subscription/success?session_id={CHECKOUT_SESSION_ID}
-```
+Após o usuário completar o pagamento no Stripe, o fluxo é:
 
-**Implementação da página de sucesso:**
+- **Stripe** → `GET http://localhost:3000/subscriptions/success?session_id={CHECKOUT_SESSION_ID}`
+- **Backend**:
+  - Valida o pagamento
+  - Tenta processar a assinatura (via webhook ou manualmente)
+  - Redireciona o usuário para:
+    - Sucesso: `/profile?payment_success=true&session_id=...`
+    - Processando: `/profile?payment_processing=true&session_id=...`
+    - Erro: `/profile?payment_error=...&session_id=...`
 
-```typescript
-// success.tsx ou success.js
-import { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom'; // ou next/router
+**Importante:**
 
-function SuccessPage() {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const sessionId = searchParams.get('session_id');
-  const token = localStorage.getItem('token');
-  const [status, setStatus] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function verifySubscription() {
-      if (!sessionId) {
-        alert('Sessão inválida');
-        navigate('/plans');
-        return;
-      }
-
-      // Aguardar alguns segundos para o webhook processar
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      try {
-        const response = await fetch('http://localhost:3000/subscriptions/status', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setStatus(data);
-          
-          if (data.hasActiveSubscription) {
-            // Assinatura confirmada!
-            // Redirecionar para dashboard ou página principal
-            setTimeout(() => {
-              navigate('/dashboard');
-            }, 3000);
-          } else {
-            // Ainda não processado, tentar novamente
-            setTimeout(verifySubscription, 2000);
-          }
-        }
-      } catch (error) {
-        console.error('Erro ao verificar assinatura:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    verifySubscription();
-  }, [sessionId, token, navigate]);
-
-  if (loading) {
-    return (
-      <div>
-        <h1>Processando seu pagamento...</h1>
-        <p>Aguarde enquanto confirmamos sua assinatura.</p>
-      </div>
-    );
-  }
-
-  if (status?.hasActiveSubscription) {
-    return (
-      <div>
-        <h1>✅ Pagamento Confirmado!</h1>
-        <p>Bem-vindo ao plano {status.subscription.plan.name}!</p>
-        <p>Redirecionando para o dashboard...</p>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <h1>Aguardando confirmação...</h1>
-      <p>Seu pagamento está sendo processado. Isso pode levar alguns segundos.</p>
-    </div>
-  );
-}
-```
+- Não é mais necessário ter uma página dedicada em `/subscription/success`.
+- Toda a lógica pós-pagamento deve acontecer na própria página de perfil (`/profile`), lendo os parâmetros de query.
+- Para exemplos detalhados de como tratar esses parâmetros e fazer polling, consulte:
+  - `docs/PAYMENT_REDIRECT_FRONTEND.md`
 
 ---
 
