@@ -347,9 +347,19 @@ export class AdminService {
   // ==================== CRUD PLANOS ====================
 
   async findAllPlans() {
-    return await this.plansRepository.find({
-      order: { level: 'ASC' },
-    });
+    // Ordenar por hierarquia: bronze (1) < prata (2) < ouro (3)
+    return await this.plansRepository
+      .createQueryBuilder('plan')
+      .orderBy(
+        `CASE 
+          WHEN plan.level = 'bronze' THEN 1
+          WHEN plan.level = 'prata' THEN 2
+          WHEN plan.level = 'ouro' THEN 3
+          ELSE 99
+        END`,
+        'ASC',
+      )
+      .getMany();
   }
 
   async findPlanById(id: string) {

@@ -11,10 +11,21 @@ export class PlansService {
   ) {}
 
   async findAll(): Promise<Plan[]> {
-    return await this.plansRepository.find({
-      where: { is_active: true },
-      order: { level: 'ASC' },
-    });
+    // Ordenar por hierarquia: bronze (1) < prata (2) < ouro (3)
+    // Usar CASE WHEN para garantir ordem correta independente da ordem alfabética
+    return await this.plansRepository
+      .createQueryBuilder('plan')
+      .where('plan.is_active = :isActive', { isActive: true })
+      .orderBy(
+        `CASE 
+          WHEN plan.level = 'bronze' THEN 1
+          WHEN plan.level = 'prata' THEN 2
+          WHEN plan.level = 'ouro' THEN 3
+          ELSE 99
+        END`,
+        'ASC',
+      )
+      .getMany();
   }
 
   async findOne(id: string): Promise<Plan> {
