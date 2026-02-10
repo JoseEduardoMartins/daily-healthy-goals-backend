@@ -419,6 +419,26 @@ docker-compose down
 docker-compose down -v
 ```
 
+### Fluxo recomendado para subir o backend com Docker
+
+Use estes comandos na raiz do projeto:
+
+```bash
+# 1) Derrubar qualquer stack existente
+docker compose down
+
+# 2) Rebuild da imagem do app (garante dependências atualizadas)
+docker compose build app
+
+# 3) Subir MySQL + app em background
+docker compose up -d
+
+# 4) Rodar setup/seed do banco dentro do container do app
+docker compose exec app npm run setup:db
+```
+
+Após isso, a API estará disponível em `http://localhost:3000` e o Swagger em `http://localhost:3000/api`.
+
 ## 🔐 Segurança
 
 ⚠️ **Nota:** Atualmente, os endpoints que requerem autenticação estão usando um header temporário `user-id`. Para produção, é necessário implementar autenticação JWT completa.

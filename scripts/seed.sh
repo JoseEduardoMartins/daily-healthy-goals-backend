@@ -11,13 +11,14 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-# Load environment variables
-if [ -f .env ]; then
-  export $(cat .env | grep -v '^#' | xargs)
+# Load environment variables APENAS se DB_HOST não estiver definido.
+# Isso evita sobrescrever as variáveis do Docker Compose dentro do container.
+if [ -z "$DB_HOST" ] && [ -f .env ]; then
+  export $(grep -v '^#' .env | xargs)
 fi
 
 # Database configuration
-DB_HOST=${DB_HOST:-localhost}
+DB_HOST=${DB_HOST:-127.0.0.1}
 DB_PORT=${DB_PORT:-3308}
 DB_USERNAME=${DB_USERNAME:-app_user}
 DB_PASSWORD=${DB_PASSWORD:-app_password}
@@ -45,7 +46,20 @@ execute_sql_file() {
   fi
   
   echo -e "${GREEN}Executing: $description${NC}"
-  mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USERNAME" -p"$DB_PASSWORD" --default-character-set=utf8mb4 < "$file"
+  if [ "$file" = "database/schema.sql" ]; then
+    # Para o schema, deixamos o próprio arquivo criar/selecionar o banco
+    mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USERNAME" -p"$DB_PASSWORD" \
+      --default-character-set=utf8mb4 \
+      --ssl=0 \
+      < "$file"
+  else
+    # Para migrations e seeds, conectamos direto no banco configurado
+    mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USERNAME" -p"$DB_PASSWORD" \
+      --default-character-set=utf8mb4 \
+      --ssl=0 \
+      "$DB_DATABASE" \
+      < "$file"
+  fi
   
   if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ $description completed${NC}"
@@ -55,27 +69,10 @@ execute_sql_file() {
   fi
 }
 
-# Step 1: Create database and schema
-echo -e "${YELLOW}Step 1: Creating database schema...${NC}"
-execute_sql_file "database/schema.sql" "Database schema"
-
-# Step 2: Run migrations (if any)
-if [ -d "database/migrations" ] && [ "$(ls -A database/migrations/*.sql 2>/dev/null)" ]; then
-  echo ""
-  echo -e "${YELLOW}Step 2: Running migrations...${NC}"
-  for migration in database/migrations/*.sql; do
-    if [ -f "$migration" ]; then
-      execute_sql_file "$migration" "Migration: $(basename $migration)"
-    fi
-  done
-else
-  echo -e "${YELLOW}Step 2: No migrations found. Skipping...${NC}"
-fi
-
-# Step 3: Run seeds
+# Step único: rodar seeds (schema e migrations são responsabilidade do TypeORM em dev)
 if [ -d "database/seeds" ] && [ "$(ls -A database/seeds/*.sql 2>/dev/null)" ]; then
   echo ""
-  echo -e "${YELLOW}Step 3: Running seeds...${NC}"
+  echo -e "${YELLOW}Step 1: Running seeds...${NC}"
   for seed in database/seeds/*.sql; do
     if [ -f "$seed" ]; then
       execute_sql_file "$seed" "Seed: $(basename $seed)"

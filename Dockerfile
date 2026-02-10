@@ -1,5 +1,8 @@
 FROM node:20-alpine AS development
 
+# Instalar bash e cliente MySQL para suportar scripts de setup (scripts/setup.sh)
+RUN apk add --no-cache bash mysql-client
+
 WORKDIR /usr/src/app
 
 COPY package*.json ./
@@ -7,6 +10,8 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
+
+RUN npm install
 
 # Build será feito em runtime com npm run start:dev
 # Não fazemos build aqui para evitar criar dist/ com permissões de root

@@ -39,7 +39,7 @@ services:
       DB_DATABASE: daily_healthy_goals
     volumes:
       - .:/usr/src/app
-      - /usr/src/app/node_modules
+      - node_modules:/usr/src/app/node_modules
     depends_on:
       mysql:
         condition: service_healthy
@@ -49,6 +49,7 @@ services:
 
 volumes:
   mysql_data:
+  node_modules:
 
 networks:
   app-network:
