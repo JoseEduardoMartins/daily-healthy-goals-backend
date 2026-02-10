@@ -11,7 +11,7 @@ export default registerAs('database', () => {
     password: process.env.DB_PASSWORD || 'app_password',
     database: process.env.DB_DATABASE || 'daily_healthy_goals',
     entities: [join(__dirname, '..', 'modules', '**', '*.entity.{ts,js}')],
-    synchronize: false, // Desabilitado - usar migrations
+    synchronize: process.env.NODE_ENV !== 'production', // Ativo em desenvolvimento, desabilitado em produção
     logging: process.env.NODE_ENV === 'development',
     migrations: [join(__dirname, '..', 'database', 'migrations', '*.{ts,js}')],
     migrationsRun: false,
@@ -25,7 +25,7 @@ export default registerAs('database', () => {
     },
     timezone: 'Z', // UTC timezone
   };
-  
+
   // Adicionar configuração de charset para mysql2
   (config.extra as any).typeCast = function (field: any, next: any) {
     if (field.type === 'VAR_STRING' || field.type === 'STRING' || field.type === 'TEXT') {
@@ -33,6 +33,6 @@ export default registerAs('database', () => {
     }
     return next();
   };
-  
+
   return config;
 });
