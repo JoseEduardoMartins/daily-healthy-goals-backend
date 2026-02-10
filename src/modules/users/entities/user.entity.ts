@@ -63,6 +63,9 @@ export class User {
   @Column({ name: 'stripe_customer_id', nullable: true })
   stripe_customer_id: string | null;
 
+  @Column({ name: 'is_deleted', type: 'boolean', default: false })
+  is_deleted: boolean;
+
   @ManyToOne(() => UserType, (userType) => userType.users, { nullable: true })
   @JoinColumn({ name: 'user_type_id' })
   user_type: UserType | null;

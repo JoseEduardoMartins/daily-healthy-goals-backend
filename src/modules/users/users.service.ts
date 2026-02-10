@@ -23,7 +23,7 @@ export class UsersService {
 
   async create(registerDto: RegisterDto): Promise<User> {
     const existingUser = await this.usersRepository.findOne({
-      where: { email: registerDto.email },
+      where: { email: registerDto.email, is_deleted: false },
     });
 
     if (existingUser) {
@@ -106,6 +106,7 @@ export class UsersService {
 
   async findAll(): Promise<User[]> {
     return await this.usersRepository.find({
+      where: { is_deleted: false },
       relations: ['user_type', 'plan'],
       order: { created_at: 'DESC' },
     });
@@ -113,7 +114,7 @@ export class UsersService {
 
   async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({
-      where: { id },
+      where: { id, is_deleted: false },
       relations: ['user_type', 'plan'],
     });
 
@@ -126,7 +127,7 @@ export class UsersService {
 
   async findByEmail(email: string): Promise<User | null> {
     return await this.usersRepository.findOne({
-      where: { email },
+      where: { email, is_deleted: false },
       relations: ['user_type', 'plan'],
     });
   }

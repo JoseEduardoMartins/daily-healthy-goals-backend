@@ -6,11 +6,12 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -44,10 +45,12 @@ export class AdminController {
   // ==================== CRUD USUÁRIOS ====================
 
   @Get('users')
-  @ApiOperation({ summary: 'Listar todos os usuários' })
+  @ApiOperation({ summary: 'Listar todos os usuários (não deletados por padrão)' })
+  @ApiQuery({ name: 'includeDeleted', required: false, type: Boolean, description: 'Incluir usuários deletados' })
   @ApiResponse({ status: 200, description: 'Lista de usuários retornada com sucesso' })
-  async findAllUsers() {
-    return await this.adminService.findAllUsers();
+  async findAllUsers(@Query('includeDeleted') includeDeleted?: string) {
+    const include = includeDeleted === 'true';
+    return await this.adminService.findAllUsers(include);
   }
 
   @Get('users/:id')

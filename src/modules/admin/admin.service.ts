@@ -54,13 +54,16 @@ export class AdminService {
       subscriptionsByStatus,
       usersByPlan,
     ] = await Promise.all([
-      this.usersRepository.count(),
+      this.usersRepository.count({
+        where: { is_deleted: false },
+      }),
       this.subscriptionsRepository.count({
         where: { status: SubscriptionEntityStatus.ACTIVE },
       }),
       this.dailyCheckinsRepository.count(),
       this.usersRepository
         .createQueryBuilder('user')
+        .where('user.is_deleted = :isDeleted', { isDeleted: false })
         .leftJoin('user.user_type', 'user_type')
         .select('user_type.name', 'type')
         .addSelect('COUNT(user.id)', 'count')
@@ -78,6 +81,7 @@ export class AdminService {
         .select('plan.name', 'plan')
         .addSelect('COUNT(user.id)', 'count')
         .where('user.plan_id IS NOT NULL')
+        .andWhere('user.is_deleted = :isDeleted', { isDeleted: false })
         .groupBy('plan.name')
         .getRawMany(),
     ]);
@@ -109,18 +113,34 @@ export class AdminService {
 
   // ==================== CRUD USUÁRIOS ====================
 
-  async findAllUsers() {
-    return await this.usersRepository.find({
-      relations: ['user_type', 'plan'],
-      order: { created_at: 'DESC' },
-    });
+  async findAllUsers(includeDeleted: boolean = false) {
+    const queryBuilder = this.usersRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.user_type', 'user_type')
+      .leftJoinAndSelect('user.plan', 'plan')
+      .orderBy('user.created_at', 'DESC');
+
+    if (!includeDeleted) {
+      queryBuilder.where('user.is_deleted = :isDeleted', { isDeleted: false });
+    }
+
+    return await queryBuilder.getMany();
   }
 
-  async findUserById(id: string) {
-    const user = await this.usersRepository.findOne({
-      where: { id },
-      relations: ['user_type', 'plan', 'subscriptions', 'daily_checkins'],
-    });
+  async findUserById(id: string, includeDeleted: boolean = false) {
+    const queryBuilder = this.usersRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.user_type', 'user_type')
+      .leftJoinAndSelect('user.plan', 'plan')
+      .leftJoinAndSelect('user.subscriptions', 'subscriptions')
+      .leftJoinAndSelect('user.daily_checkins', 'daily_checkins')
+      .where('user.id = :id', { id });
+
+    if (!includeDeleted) {
+      queryBuilder.andWhere('user.is_deleted = :isDeleted', { isDeleted: false });
+    }
+
+    const user = await queryBuilder.getOne();
 
     if (!user) {
       throw new NotFoundException('Usuário não encontrado');
@@ -131,7 +151,7 @@ export class AdminService {
 
   async createUser(createUserDto: CreateUserDto) {
     const existingUser = await this.usersRepository.findOne({
-      where: { email: createUserDto.email },
+      where: { email: createUserDto.email, is_deleted: false },
     });
 
     if (existingUser) {
@@ -183,7 +203,7 @@ export class AdminService {
 
     if (updateUserDto.email && updateUserDto.email !== user.email) {
       const existingUser = await this.usersRepository.findOne({
-        where: { email: updateUserDto.email },
+        where: { email: updateUserDto.email, is_deleted: false },
       });
 
       if (existingUser) {
@@ -236,8 +256,13 @@ export class AdminService {
   }
 
   async deleteUser(id: string) {
-    const user = await this.findUserById(id);
-    await this.usersRepository.remove(user);
+    const user = await this.findUserById(id, true); // Permite buscar mesmo se deletado
+    
+    if (user.is_deleted) {
+      throw new BadRequestException('Usuário já está deletado');
+    }
+
+    await this.usersRepository.update(id, { is_deleted: true });
     return { message: 'Usuário removido com sucesso' };
   }
 
