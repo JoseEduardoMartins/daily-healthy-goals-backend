@@ -15,6 +15,7 @@ import { ExercisePrescriptionsModule } from './modules/exercise-prescriptions/ex
 import { UserTypesModule } from './modules/user-types/user-types.module';
 import { PlansModule } from './modules/plans/plans.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
+import { AdminModule } from './modules/admin/admin.module';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 import jwtConfig from './config/jwt.config';
@@ -46,6 +47,7 @@ import stripeConfig from './config/stripe.config';
     UserTypesModule,
     PlansModule,
     SubscriptionsModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

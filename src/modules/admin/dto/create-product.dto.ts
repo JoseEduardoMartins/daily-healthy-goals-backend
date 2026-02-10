@@ -1,0 +1,43 @@
+import { IsNotEmpty, IsString, IsUUID, IsOptional } from 'class-validator';
+
+export class CreateProductDto {
+  @IsNotEmpty({ message: 'category_id é obrigatório' })
+  @IsUUID('all', { message: 'category_id deve ser um UUID válido' })
+  category_id: string;
+
+  @IsNotEmpty({ message: 'pain_state_id é obrigatório' })
+  @IsUUID('all', { message: 'pain_state_id deve ser um UUID válido' })
+  pain_state_id: string;
+
+  @IsNotEmpty({ message: 'Nome é obrigatório' })
+  @IsString()
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  image_url?: string;
+
+  @IsOptional()
+  @IsString()
+  moment_of_day?: string;
+
+  @IsOptional()
+  @IsString()
+  benefits?: string;
+
+  @IsOptional()
+  @IsString()
+  recipe_prep?: string;
+
+  @IsOptional()
+  @IsUUID('all', { message: 'user_type_id deve ser um UUID válido' })
+  user_type_id?: string | null;
+
+  @IsOptional()
+  @IsUUID('all', { message: 'plan_id deve ser um UUID válido' })
+  plan_id?: string | null;
+}
