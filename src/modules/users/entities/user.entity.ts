@@ -40,6 +40,9 @@ export class User {
   @Column({ type: 'float', nullable: false })
   height: number;
 
+  @Column({ name: 'birth_date', type: 'date', nullable: true })
+  birth_date: Date | null;
+
   @CreateDateColumn({ type: 'datetime' })
   created_at: Date;
 

@@ -189,6 +189,7 @@ export class AdminService {
       password: hashedPassword,
       weight: createUserDto.weight,
       height: createUserDto.height,
+      birth_date: createUserDto.birth_date ? new Date(createUserDto.birth_date) : null,
       user_type_id: userType.id,
       plan_id: planId,
       subscription_status: subscriptionStatus,
@@ -239,6 +240,9 @@ export class AdminService {
     // Remover campos que não existem na entidade
     if ('user_type' in updateData) {
       delete updateData.user_type;
+    }
+    if (updateUserDto.birth_date !== undefined) {
+      updateData.birth_date = updateUserDto.birth_date ? new Date(updateUserDto.birth_date) : null;
     }
     
     // Se user_type foi fornecido, buscar o ID

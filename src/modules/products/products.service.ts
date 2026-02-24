@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CurrentUserPayload } from '../../common/decorators/current-user.decorator';
 import { PermissionsHelper } from '../../common/helpers/permissions.helper';
+import { getAgeFromBirthDate, isAgeInProductRange } from '../../common/helpers/age.helper';
 
 @Injectable()
 export class ProductsService {
@@ -89,6 +90,12 @@ export class ProductsService {
     }));
 
     // Filtra baseado na hierarquia de planos
-    return PermissionsHelper.filterByAccess(productsWithPlanLevel, user);
+    const byAccess = PermissionsHelper.filterByAccess(productsWithPlanLevel, user);
+
+    // Metas de alimentação por data de nascimento: filtrar por faixa etária (min_age/max_age)
+    const userAge = getAgeFromBirthDate(user.birth_date);
+    return byAccess.filter((product) =>
+      isAgeInProductRange(userAge, product.min_age ?? null, product.max_age ?? null),
+    );
   }
 }

@@ -25,6 +25,7 @@ O endpoint de registro (`POST /auth/register`) foi atualizado para permitir que 
 - **`password`**: `string` - Senha do usuário
 - **`weight`**: `number` - Peso em kg (deve ser > 0)
 - **`height`**: `number` - Altura em metros (deve ser > 0)
+- **`birth_date`**: `string` - Data de nascimento no formato **YYYY-MM-DD**. Obrigatória. Não pode ser data futura.
 
 ### Campos Novos (Controle de Acesso)
 
@@ -52,6 +53,7 @@ Content-Type: application/json
   "password": "senha123",
   "weight": 70,
   "height": 1.70,
+  "birth_date": "1995-06-15",
   "user_type": "visitante"
 }
 ```
@@ -69,6 +71,7 @@ Content-Type: application/json
     "email": "maria.visitante@example.com",
     "weight": 70,
     "height": 1.7,
+    "birth_date": "1995-06-15",
     "role": "visitante",
     "plan_id": null,
     "user_type_id": "uuid-do-tipo-visitante"
@@ -133,6 +136,7 @@ Content-Type: application/json
   "password": "senha123",
   "weight": 80,
   "height": 1.80,
+  "birth_date": "1988-03-10",
   "user_type": "pagante",
   "plan_id": "15ac0191-0531-11f1-a076-0242ac160002"
 }
@@ -149,6 +153,7 @@ Content-Type: application/json
     "email": "joao.pagante@example.com",
     "weight": 80,
     "height": 1.8,
+    "birth_date": "1988-03-10",
     "role": "pagante",
     "plan_id": "15ac0191-0531-11f1-a076-0242ac160002",
     "user_type_id": "uuid-do-tipo-pagante"
@@ -199,6 +204,7 @@ O formulário de registro deve incluir:
   - Input para `password` (com tipo password)
   - Input para `weight` (número)
   - Input para `height` (número)
+  - Input para **`birth_date`** (tipo `date` ou date picker; formato YYYY-MM-DD; não pode ser futura)
 
 - **Seletor de tipo de usuário**:
   - Radio buttons ou Select para escolher entre `"visitante"` ou `"pagante"`
@@ -254,6 +260,7 @@ interface RegisterForm {
   password: string;
   weight: number;
   height: number;
+  birth_date: string; // YYYY-MM-DD
   user_type: 'visitante' | 'pagante';
   plan_id?: string;
 }
@@ -266,6 +273,7 @@ async function handleRegister(formData: RegisterForm) {
     password: formData.password,
     weight: formData.weight,
     height: formData.height,
+    birth_date: formData.birth_date,
     user_type: formData.user_type,
   };
 
@@ -325,6 +333,10 @@ async function loadPlans() {
 - **`GET /plans`**: Lista planos disponíveis (use antes de registrar pagante)
 - **`POST /auth/login`**: Login de usuário existente
 - **`GET /user-types`**: Lista tipos de usuário disponíveis (opcional, para referência)
+
+## 📄 Documentação complementar
+
+- **[FRONTEND_BIRTH_DATE_AND_GOALS.md](./FRONTEND_BIRTH_DATE_AND_GOALS.md)** – Data de nascimento no registro e metas de alimentação por idade (tipos, exemplos e checklist para o frontend).
 
 ---
 

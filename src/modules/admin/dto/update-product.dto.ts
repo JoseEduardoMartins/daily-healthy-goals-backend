@@ -1,4 +1,4 @@
-import { IsString, IsUUID, IsOptional, IsIn } from 'class-validator';
+import { IsString, IsUUID, IsOptional, IsIn, IsInt, Min, Max } from 'class-validator';
 
 export class UpdateProductDto {
   @IsOptional()
@@ -40,4 +40,16 @@ export class UpdateProductDto {
   @IsOptional()
   @IsUUID('all', { message: 'plan_id deve ser um UUID válido' })
   plan_id?: string | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(150)
+  min_age?: number | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(150)
+  max_age?: number | null;
 }

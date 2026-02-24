@@ -1,4 +1,4 @@
-import { IsEmail, IsNumber, Min, IsIn, IsUUID, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsNumber, Min, IsIn, IsUUID, IsOptional, IsString, IsDateString, MaxDate } from 'class-validator';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -22,6 +22,11 @@ export class UpdateUserDto {
   @IsNumber({}, { message: 'Altura deve ser um número' })
   @Min(0.1, { message: 'Altura deve ser maior que zero' })
   height?: number;
+
+  @IsOptional()
+  @IsDateString(undefined, { message: 'Data de nascimento deve ser uma data válida (YYYY-MM-DD)' })
+  @MaxDate(new Date(), { message: 'Data de nascimento não pode ser futura' })
+  birth_date?: string | null;
 
   @IsOptional()
   @IsIn(['admin', 'visitante', 'pagante'], { message: 'Tipo de usuário deve ser "admin", "visitante" ou "pagante"' })

@@ -9,6 +9,8 @@ export interface CurrentUserPayload {
   user_type_id?: string | null;
   subscription_status?: string | null; // 'active', 'canceled', 'expired', 'past_due', 'trialing'
   subscription_expires_at?: Date | null;
+  /** Data de nascimento (ISO string ou Date) para cálculo de idade nas metas de alimentação */
+  birth_date?: string | Date | null;
 }
 
 export const CurrentUser = createParamDecorator(

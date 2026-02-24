@@ -228,6 +228,7 @@ const metrics = await response.json();
   "password": "senha123",
   "weight": 65.0,
   "height": 1.65,
+  "birth_date": "1990-05-20",
   "user_type": "admin",
   "plan_id": null
 }
@@ -239,6 +240,7 @@ const metrics = await response.json();
 - `password` (obrigatório): Senha (será hasheada)
 - `weight` (obrigatório): Peso em kg
 - `height` (obrigatório): Altura em metros
+- `birth_date` (opcional): Data de nascimento (YYYY-MM-DD); usado nas metas de alimentação por idade
 - `user_type` (obrigatório): `"admin"`, `"visitante"` ou `"pagante"`
 - `plan_id` (opcional): UUID do plano (apenas para pagantes)
 
@@ -356,7 +358,9 @@ Retorna produto com todos os relacionamentos, incluindo ingredientes.
   "benefits": "Fonte de vitamina C",
   "recipe_prep": "Bater todas as frutas no liquidificador",
   "user_type_id": null,
-  "plan_id": "uuid-do-plano"
+  "plan_id": "uuid-do-plano",
+  "min_age": 18,
+  "max_age": 65
 }
 ```
 
@@ -369,6 +373,8 @@ Retorna produto com todos os relacionamentos, incluindo ingredientes.
 - `description`, `image_url`, `moment_of_day`, `benefits`, `recipe_prep`
 - `user_type_id`: UUID do tipo de usuário (null = público)
 - `plan_id`: UUID do plano (null = público)
+- **`min_age`**: número (0–150) – idade mínima para o produto aparecer nas metas de alimentação; se omitido, produto vale para todas as idades
+- **`max_age`**: número (0–150) – idade máxima para o produto aparecer nas metas; se omitido, produto vale para todas as idades
 
 ### Atualizar Produto
 
@@ -379,7 +385,9 @@ Retorna produto com todos os relacionamentos, incluindo ingredientes.
 {
   "name": "Smoothie de Frutas Tropicais",
   "description": "Nova descrição",
-  "plan_id": null
+  "plan_id": null,
+  "min_age": null,
+  "max_age": null
 }
 ```
 
@@ -1136,6 +1144,7 @@ interface User {
   email: string;
   weight: number;
   height: number;
+  birth_date: string | null; // YYYY-MM-DD
   created_at: string;
   user_type_id: string | null;
   plan_id: string | null;
@@ -1174,6 +1183,8 @@ interface Product {
   recipe_prep: string | null;
   user_type_id: string | null;
   plan_id: string | null;
+  min_age: number | null;  // idade mínima para aparecer nas metas de alimentação
+  max_age: number | null;  // idade máxima para aparecer nas metas de alimentação
   category: {
     id: string;
     name: string;
@@ -1618,6 +1629,7 @@ function ProductForm({ product, onSubmit, onCancel }: any) {
 - [Documentação da API Swagger](http://localhost:3000/api) - Visualize todos os endpoints
 - [Autenticação JWT](./AUTH.md) - Como funciona a autenticação
 - [Controle de Acesso](./PERMISSIONS.md) - Sistema de roles e permissões
+- [Data de nascimento e metas por idade](./FRONTEND_BIRTH_DATE_AND_GOALS.md) - Registro com `birth_date`, resposta de auth e filtro de metas de alimentação por faixa etária
 
 ---
 

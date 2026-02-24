@@ -32,6 +32,7 @@ Os endpoints de autenticação (`POST /auth/login` e `POST /auth/register`) reto
     "email": "ouro@dailyhealthygoals.com",
     "weight": 74,
     "height": 1.74,
+    "birth_date": "1980-11-05",
     "role": "pagante",
     "plan_id": "44186098-05e4-11f1-907e-0242ac160002",
     "user_type_id": "43d71bc4-05e4-11f1-907e-0242ac160002",
@@ -62,6 +63,7 @@ Os endpoints de autenticação (`POST /auth/login` e `POST /auth/register`) reto
     "email": "visitante@dailyhealthygoals.com",
     "weight": 70,
     "height": 1.70,
+    "birth_date": "1990-05-20",
     "role": "visitante",
     "plan_id": null,
     "user_type_id": "uuid-do-tipo-visitante",
@@ -88,6 +90,7 @@ Os endpoints de autenticação (`POST /auth/login` e `POST /auth/register`) reto
     "email": "pagante@example.com",
     "weight": 75,
     "height": 1.75,
+    "birth_date": "1985-01-15",
     "role": "pagante",
     "plan_id": null,
     "user_type_id": "uuid-do-tipo-pagante",
@@ -116,6 +119,7 @@ Os endpoints de autenticação (`POST /auth/login` e `POST /auth/register`) reto
 | `email` | `string` | Email do usuário |
 | `weight` | `number` | Peso em kg |
 | `height` | `number` | Altura em metros |
+| `birth_date` | `string \| null` | Data de nascimento (YYYY-MM-DD) ou `null` se não informado |
 | `role` | `string` | Tipo de usuário: `"admin"`, `"visitante"` ou `"pagante"` |
 | `plan_id` | `string \| null` | ID do plano atual do usuário (null se não tiver plano) |
 | `user_type_id` | `string \| null` | ID do tipo de usuário |
@@ -181,6 +185,7 @@ interface User {
   email: string;
   weight: number;
   height: number;
+  birth_date: string | null;
   role: string;
   plan_id: string | null;
   user_type_id: string | null;
@@ -381,3 +386,5 @@ O endpoint `POST /auth/register` retorna o mesmo formato de resposta que o login
 - **`POST /subscriptions/cancel`**: Cancelar assinatura atual
 
 Para mais informações, consulte a documentação de [Fluxo de Pagamento](./PAYMENT_FLOW_FRONTEND.md).
+
+Para **data de nascimento** no registro e **metas de alimentação por idade**, consulte [FRONTEND_BIRTH_DATE_AND_GOALS.md](./FRONTEND_BIRTH_DATE_AND_GOALS.md).

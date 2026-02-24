@@ -95,6 +95,7 @@ export class UsersService {
       password: hashedPassword,
       weight: registerDto.weight,
       height: registerDto.height,
+      birth_date: registerDto.birth_date ? new Date(registerDto.birth_date) : null,
       user_type_id: finalUserTypeId,
       plan_id: planId,
       subscription_status: subscriptionStatus,

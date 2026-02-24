@@ -48,6 +48,12 @@ export class Product {
   @Column({ name: 'plan_id', nullable: true })
   plan_id: string | null;
 
+  @Column({ name: 'min_age', type: 'int', nullable: true })
+  min_age: number | null;
+
+  @Column({ name: 'max_age', type: 'int', nullable: true })
+  max_age: number | null;
+
   @ManyToOne(() => Category, (category) => category.products)
   @JoinColumn({ name: 'category_id' })
   category: Category;

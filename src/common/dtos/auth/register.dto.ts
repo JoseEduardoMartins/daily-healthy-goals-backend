@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsNumber, Min, IsIn, IsUUID, ValidateIf } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, Min, IsIn, IsUUID, ValidateIf, IsDateString, MaxDate } from 'class-validator';
 
 export class RegisterDto {
   @IsNotEmpty({ message: 'Nome é obrigatório' })
@@ -20,6 +20,11 @@ export class RegisterDto {
   @Min(0.1, { message: 'Altura deve ser maior que zero' })
   @IsNotEmpty({ message: 'Altura é obrigatória' })
   height: number;
+
+  @IsNotEmpty({ message: 'Data de nascimento é obrigatória' })
+  @IsDateString(undefined, { message: 'Data de nascimento deve ser uma data válida (YYYY-MM-DD)' })
+  @MaxDate(new Date(), { message: 'Data de nascimento não pode ser futura' })
+  birth_date: string;
 
   @IsNotEmpty({ message: 'Tipo de usuário é obrigatório' })
   @IsIn(['visitante', 'pagante'], { message: 'Tipo de usuário deve ser "visitante" ou "pagante". Admin não pode ser cadastrado por segurança.' })

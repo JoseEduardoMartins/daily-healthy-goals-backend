@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsUUID, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsUUID, IsOptional, IsInt, Min, Max } from 'class-validator';
 
 export class CreateProductDto {
   @IsNotEmpty({ message: 'category_id é obrigatório' })
@@ -40,4 +40,16 @@ export class CreateProductDto {
   @IsOptional()
   @IsUUID('all', { message: 'plan_id deve ser um UUID válido' })
   plan_id?: string | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(150)
+  min_age?: number | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(150)
+  max_age?: number | null;
 }

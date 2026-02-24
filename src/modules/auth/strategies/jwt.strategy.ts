@@ -67,6 +67,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       user_type_id: user.user_type_id, // ✅ Do banco
       subscription_status: effectiveSubscriptionStatus, // ✅ Do banco
       subscription_expires_at: effectiveSubscriptionExpiresAt, // ✅ Do banco
+      birth_date: user.birth_date ?? null, // Para metas de alimentação por faixa etária
     };
   }
 }

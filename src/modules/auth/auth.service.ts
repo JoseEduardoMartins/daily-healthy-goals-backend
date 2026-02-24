@@ -17,6 +17,7 @@ export interface AuthResponse {
     email: string;
     weight: number;
     height: number;
+    birth_date: string | null;
     role: string;
     plan_id: string | null;
     user_type_id: string | null;
@@ -153,6 +154,7 @@ export class AuthService {
         email: user.email,
         weight: user.weight,
         height: user.height,
+        birth_date: user.birth_date ? (user.birth_date instanceof Date ? user.birth_date.toISOString().slice(0, 10) : String(user.birth_date).slice(0, 10)) : null,
         role,
         plan_id: user.plan_id,
         user_type_id: user.user_type_id,
