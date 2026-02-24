@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsNumber, Min, IsIn, IsUUID, ValidateIf, IsDateString, MaxDate } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, Min, IsIn, IsUUID, ValidateIf, IsDateString } from 'class-validator';
+import { IsNotFutureDate } from '../../validators/not-future-date.validator';
 
 export class RegisterDto {
   @IsNotEmpty({ message: 'Nome é obrigatório' })
@@ -23,7 +24,7 @@ export class RegisterDto {
 
   @IsNotEmpty({ message: 'Data de nascimento é obrigatória' })
   @IsDateString(undefined, { message: 'Data de nascimento deve ser uma data válida (YYYY-MM-DD)' })
-  @MaxDate(new Date(), { message: 'Data de nascimento não pode ser futura' })
+  @IsNotFutureDate({ message: 'Data de nascimento não pode ser futura' })
   birth_date: string;
 
   @IsNotEmpty({ message: 'Tipo de usuário é obrigatório' })

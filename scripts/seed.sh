@@ -69,7 +69,28 @@ execute_sql_file() {
   fi
 }
 
-# Step único: rodar seeds (schema e migrations são responsabilidade do TypeORM em dev)
+# Step 0: aguardar o schema existir (TypeORM synchronize ao subir a app)
+# Após "docker compose up -d", a app pode levar alguns segundos para criar as tabelas
+echo ""
+echo -e "${YELLOW}Step 0: Waiting for schema (TypeORM)...${NC}"
+MAX_ATTEMPTS=40
+for i in $(seq 1 $MAX_ATTEMPTS); do
+  if mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USERNAME" -p"$DB_PASSWORD" \
+    --default-character-set=utf8mb4 --ssl=0 -N -e \
+    "SELECT 1 FROM information_schema.tables WHERE table_schema = '$DB_DATABASE' AND table_name = 'users' LIMIT 1" \
+    "$DB_DATABASE" 2>/dev/null | grep -q 1; then
+    echo -e "${GREEN}✓ Schema ready${NC}"
+    break
+  fi
+  if [ "$i" -eq "$MAX_ATTEMPTS" ]; then
+    echo -e "${RED}Timeout: schema not found. Ensure the app has started (e.g. 'docker compose up -d' and wait ~30s), then run seed again.${NC}"
+    exit 1
+  fi
+  echo "  Waiting for schema... ($i/$MAX_ATTEMPTS)"
+  sleep 3
+done
+
+# Step 1: rodar seeds (schema e migrations são responsabilidade do TypeORM em dev)
 if [ -d "database/seeds" ] && [ "$(ls -A database/seeds/*.sql 2>/dev/null)" ]; then
   echo ""
   echo -e "${YELLOW}Step 1: Running seeds...${NC}"
